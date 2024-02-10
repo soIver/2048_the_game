@@ -19,7 +19,7 @@ def have_space(matrix: list[list]):
             if matrix[i][j] == 0:
                 return True
             
-def addtile(matrix: list[list]):
+def addtile(matrix, tiles_lst):
     if have_space(matrix):
         c, r = random.randint(0, 3), random.randint(0, 3)
         while matrix[r][c] != 0:
@@ -29,6 +29,14 @@ def addtile(matrix: list[list]):
         else:
             tilevalue = 2
         matrix[r][c] = tilevalue
+        for i in range(4):
+            for j in range(4):
+                if not tiles_lst[i][j][2]:
+                    tiles_lst[i][j][1][0] = r
+                    tiles_lst[i][j][1][1] = c
+                    tiles_lst[i][j][2] = True
+                    return
+
 
 def get_state(matrix: list[list]):
     if have_space(matrix):
@@ -108,6 +116,19 @@ def moved_down(matrix: list[list]):
 def moved_up(matrix: list[list]):
     return rotated_right(moved_left(rotated_left(matrix)))
 
+def moving(tiles_lst, border, shift, coord, i, j):
+    while tiles_lst[i][j][2] and not tiles_lst[i][j][1][coord] == border:
+        tiles_lst[i][j][1][coord] += shift
+        for r in range(4):
+            for c in range(4):
+                if i == r and j == c:
+                    continue
+                if not (tiles_lst[i][j][1][abs(coord - 1)] == tiles_lst[r][c][1][abs(coord - 1)] and tiles_lst[r][c][2]):
+                    continue
+                if tiles_lst[i][j][1][coord] == tiles_lst[r][c][1][coord] or tiles_lst[i][j][1][coord] == border + shift:
+                    tiles_lst[i][j][1][coord] -= shift
+                    return
+
 score = 0
 merge_cnt = 0
 
@@ -116,6 +137,8 @@ class MainWindow(QWidget):
         tile_color = QColor(242, 226, 194).name()
         bg_plain_color = QColor(232, 217, 186).name()
         super().__init__()
+        self.opacity = QGraphicsOpacityEffect(self)
+        self.opacity.setOpacity(1.0)
         self.tilesize = 150
         self.matrix = QLabel(self)
         self.score_table = QLabel(self)
@@ -143,10 +166,6 @@ class MainWindow(QWidget):
                 self.game_area_pos[i][j].append(self.tileposx)
                 self.game_area_pos[i][j].append(self.tileposy)
 
-        addtile(self.game_area)
-        addtile(self.game_area)
-        self.matrix.setText(game_area_str(self.game_area))
-
         self.score_table.setGeometry(810, 150, 300, 150)
         self.score_table.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.score_table.setStyleSheet("background-color: %s; border-radius: 30px" % bg_plain_color)
@@ -161,14 +180,20 @@ class MainWindow(QWidget):
         self.tile9, self.tile10, self.tile11, self.tile12 = QWidget(self), QWidget(self), QWidget(self), QWidget(self)
         self.tile13, self.tile14, self.tile15, self.tile16 = QWidget(self), QWidget(self), QWidget(self), QWidget(self)
 
-        self.tiles_lst = [[[self.tile1, [0, 0], True], [self.tile2, [0, 1], True], [self.tile3, [0, 2], True], [self.tile4, [0, 3], True]], 
-                           [[self.tile5, [1, 0], True], [self.tile6, [1, 1], False], [self.tile7, [1, 2], False], [self.tile8, [1, 3], False]],
-                           [[self.tile9, [2, 0], True], [self.tile10, [2, 1], False], [self.tile11, [2, 2], False], [self.tile12, [2, 3], False]],
-                           [[self.tile13, [3, 0], True], [self.tile14, [3, 1], False], [self.tile15, [3, 2], False], [self.tile16, [3, 3], False]]]
+        self.tiles_lst = [[[self.tile1, [0, 0], False], [self.tile2, [0, 0], False], [self.tile3, [0, 0], False], [self.tile4, [0, 0], False]], 
+                           [[self.tile5, [0, 0], False], [self.tile6, [0, 0], False], [self.tile7, [0, 0], False], [self.tile8, [0, 0], False]],
+                           [[self.tile9, [0, 0], False], [self.tile10, [0, 0], False], [self.tile11, [0, 0], False], [self.tile12, [0, 0], False]],
+                           [[self.tile13, [0, 0], False], [self.tile14, [0, 0], False], [self.tile15, [0, 0], False], [self.tile16, [0, 0], False]]]
+        addtile(self.game_area, self.tiles_lst)
+        addtile(self.game_area, self.tiles_lst)
+        self.matrix.setText(game_area_str(self.game_area))
+
         for i in range(4):
             for j in range(4):
                 self.tiles_lst[i][j][0].setStyleSheet("background-color: %s; border-radius: 10px" % tile_color)
-                self.tiles_lst[i][j][0].setGeometry(self.game_area_pos[i][j][0], self.game_area_pos[i][j][1], self.tilesize, self.tilesize)
+                self.tiles_lst[i][j][0].setGeometry(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1], self.tilesize, self.tilesize)
+                self.tiles_lst[i][j][0].setVisible(self.tiles_lst[i][j][2])
+
         self.setWindowTitle("2048")
         self.setMinimumSize(960, 600)
         self.showMaximized()
@@ -178,117 +203,72 @@ class MainWindow(QWidget):
     def keyPressEvent(self, e):
         global score
         self.pos_anim = QParallelAnimationGroup()
-
+        self.opacity_anim = QParallelAnimationGroup()
         if e.key() == Qt.Key_Q:
             self.close()
         
         if e.key() == Qt.Key_D:
             if self.game_area != moved_right(self.game_area):
                 self.game_area = moved_right(self.game_area)
-                addtile(self.game_area)
-            for i in range(4):
-                for j in range(4):
-                    if self.tiles_lst[i][j][2] and not self.tiles_lst[i][j][1][1] == 3:
-                        self.tiles_lst[i][j][1][1] += 1
-                        for r in range(4):
-                            for c in range(4):
-                                if i == r and j == c:
-                                    continue
-                                if not (self.tiles_lst[i][j][1][0] == self.tiles_lst[r][c][1][0] and self.tiles_lst[r][c][2]):
-                                    continue
-                                if self.tiles_lst[i][j][1][1] == self.tiles_lst[r][c][1][1] or self.tiles_lst[i][j][1][1] == 4:
-                                    self.tiles_lst[i][j][1][1] -= 1
-                                    break
-                            else:
-                                continue
-                            break
-                        self.anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"pos")
-                        self.anim.setEasingCurve(QEasingCurve.OutCubic)
-                        self.anim.setDuration(300)
-                        self.pos_anim.addAnimation(self.anim)
-                        self.anim.setEndValue(QPoint(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1]))
-
+                for i in range(4):
+                    for j in range(4):
+                        moving(self.tiles_lst, 3, 1, 1, i, j)
+                        anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"pos")
+                        anim.setEasingCurve(QEasingCurve.OutCubic)
+                        anim.setDuration(300)
+                        anim.setEndValue(QPoint(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1]))
+                        self.pos_anim.addAnimation(anim)
+                addtile(self.game_area, self.tiles_lst)
 
         if e.key() == Qt.Key_A:
             self.game_area = moved_left(self.game_area)
-            addtile(self.game_area)
             for i in range(4):
                 for j in range(4):
-                    if self.tiles_lst[i][j][2] and not self.tiles_lst[i][j][1][1] == 0:
-                        self.tiles_lst[i][j][1][1] -= 1
-                        for r in range(4):
-                            for c in range(4):
-                                if i == r and j == c:
-                                    continue                                
-                                if not (self.tiles_lst[i][j][1][0] == self.tiles_lst[r][c][1][0] and self.tiles_lst[r][c][2]):     
-                                    continue
-                                if self.tiles_lst[i][j][1][1] == self.tiles_lst[r][c][1][1] or self.tiles_lst[i][j][1][1] == -1:
-                                    self.tiles_lst[i][j][1][1] += 1
-                                    break
-                            else:
-                                continue
-                            break
-                        self.anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"pos")
-                        self.anim.setEasingCurve(QEasingCurve.OutCubic)
-                        self.anim.setDuration(300)
-                        self.pos_anim.addAnimation(self.anim)
-                        self.anim.setEndValue(QPoint(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1]))
+                    moving(self.tiles_lst, 0, -1, 1, i, j)
+                    anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"pos")
+                    anim.setEasingCurve(QEasingCurve.OutCubic)
+                    anim.setDuration(300)
+                    anim.setEndValue(QPoint(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1]))
+                    self.pos_anim.addAnimation(anim)
+            addtile(self.game_area, self.tiles_lst)
 
         if e.key() == Qt.Key_W:
             if self.game_area != moved_up(self.game_area):
                 self.game_area = moved_up(self.game_area)
-                addtile(self.game_area)
-            for i in range(4):
-                for j in range(4):
-                    if self.tiles_lst[i][j][2] and not self.tiles_lst[i][j][1][0] == 0:
-                        self.tiles_lst[i][j][1][0] -= 1
-                        for r in range(4):
-                            for c in range(4):
-                                if i == r and j == c:
-                                    continue
-                                if not (self.tiles_lst[i][j][1][1] == self.tiles_lst[r][c][1][1] and self.tiles_lst[r][c][2]):
-                                    continue
-                                if self.tiles_lst[i][j][1][0] == self.tiles_lst[r][c][1][0] or self.tiles_lst[i][j][1][0] == -1:
-                                    self.tiles_lst[i][j][1][0] += 1
-                                    break
-                            else:
-                                continue
-                            break
-                        self.anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"pos")
-                        self.anim.setEasingCurve(QEasingCurve.OutCubic)
-                        self.anim.setDuration(300)
-                        self.pos_anim.addAnimation(self.anim)
-                        self.anim.setEndValue(QPoint(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1]))
+                for i in range(4):
+                    for j in range(4):
+                        moving(self.tiles_lst, 0, -1, 0, i, j)
+                        anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"pos")
+                        anim.setEasingCurve(QEasingCurve.OutCubic)
+                        anim.setDuration(300)
+                        anim.setEndValue(QPoint(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1]))
+                        self.pos_anim.addAnimation(anim)
+                addtile(self.game_area, self.tiles_lst)
 
         if e.key() == Qt.Key_S:
             if self.game_area != moved_down(self.game_area):
                 self.game_area = moved_down(self.game_area)
-                addtile(self.game_area)
-            for i in range(4):
-                for j in range(4):
-                    if self.tiles_lst[i][j][2] and not self.tiles_lst[i][j][1][0] == 3:
-                        self.tiles_lst[i][j][1][0] += 1
-                        for r in range(4):
-                            for c in range(4):
-                                if i == r and j == c:
-                                    continue
-                                if not (self.tiles_lst[i][j][1][1] == self.tiles_lst[r][c][1][1] and self.tiles_lst[r][c][2]):
-                                    continue
-                                if self.tiles_lst[i][j][1][0] == self.tiles_lst[r][c][1][0] or self.tiles_lst[i][j][1][0] == 4:
-                                    self.tiles_lst[i][j][1][0] -= 1
-                                    break
-                            else:
-                                continue
-                            break
-                        self.anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"pos")
-                        self.anim.setEasingCurve(QEasingCurve.OutCubic)
-                        self.anim.setDuration(300)
-                        self.pos_anim.addAnimation(self.anim)
-                        self.anim.setEndValue(QPoint(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1]))
+                for i in range(4):
+                    for j in range(4):
+                        moving(self.tiles_lst, 3, 1, 0, i, j)
+                        anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"pos")
+                        anim.setEasingCurve(QEasingCurve.OutCubic)
+                        anim.setDuration(300)
+                        anim.setEndValue(QPoint(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1]))
+                        self.pos_anim.addAnimation(anim)
+                addtile(self.game_area, self.tiles_lst)
         
         self.pos_anim.start()
+        self.opacity_anim.start()
         self.matrix.setText(game_area_str(self.game_area))
         self.score_table.setText("cчёт: " + str(score))
+        for i in range(4):
+            for j in range(4):
+                if self.tiles_lst[i][j][2]:
+                    if self.game_area[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]] == 0:
+                        self.tiles_lst[i][j][2] = False
+                self.tiles_lst[i][j][0].setGeometry(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1], self.tilesize, self.tilesize)
+                self.tiles_lst[i][j][0].setVisible(self.tiles_lst[i][j][2])
 
 app = QApplication(sys.argv)
 window_game = MainWindow()
