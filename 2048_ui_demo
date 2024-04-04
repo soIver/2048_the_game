@@ -1,6 +1,6 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QColor, QPixmap
+from PyQt5.QtGui import *
 import sys
 import random
 
@@ -29,9 +29,15 @@ class MainWindow(QMainWindow):
         self.icon_font = self.fonts_parent.font()
         self.icon_font.setPointSize(50)
         self.icon_font.setBold(True)
+        self.desc_font = self.fonts_parent.font()
+        self.desc_font.setPointSize(25)
+        self.desc_font.setBold(True)
+        self.desc_font_mini = self.fonts_parent.font()
+        self.desc_font_mini.setPointSize(15)
         self.action_timer = QTimer()
-        self.action_timer.setInterval(250)
+        self.action_timer.setInterval(100)
         self.action_timer.timeout.connect(self.enable_moving)
+        self.timer_times = 0
         self.menu_timer = QTimer()
         self.menu_timer.setInterval(300)
         self.menu_timer.timeout.connect(self.enable_menu_moving)
@@ -44,15 +50,77 @@ class MainWindow(QMainWindow):
         self.desk_w = QApplication.desktop().width()
         self.desk_h = QApplication.desktop().height()
         self.clr_change('classic')
-        self.new_game(x, y)
+        self.game_window_init(x, y)
+        self.windows_init()
 
-        self.mode_window_title = QLabel(self)
-        self.mode_window_title2 = QLabel(self)
-        self.mode_window_title.setFont(self.icon_font)
-        self.mode_window_title.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
-        self.mode_window_title.setStyleSheet('color: %s' % self.text_color1)
-        self.mode_window_title.setText("выбор режима игры")
-        self.mode_window_title.setGeometry(QRect(600 - self.desk_w, 50, 1200, 100))
+    def windows_init(self):
+        self.mode_title = QLabel("выбор режима игры", self)
+        self.mode_title.setFont(self.icon_font)
+        self.mode_title.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
+        self.mode_title.setStyleSheet('color: %s' % self.text_color1)
+        self.mode_title.setGeometry(QRect(600, 50 - self.desk_h, 1200, 100))
+        self.mode_pad1 = QWidget(self)
+        self.mode_pad1.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
+        self.mode_pad1.setGeometry(QRect(610, 200 - self.desk_h, 580, 280))
+        self.mode_pad2 = QWidget(self)
+        self.mode_pad2.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
+        self.mode_pad2.setGeometry(QRect(1250, 200 - self.desk_h, 580, 280))
+        self.mode_pad3 = QWidget(self)
+        self.mode_pad3.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
+        self.mode_pad3.setGeometry(QRect(610, 625 - self.desk_h, 580, 280))
+        self.mode_pad4 = QWidget(self)
+        self.mode_pad4.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
+        self.mode_pad4.setGeometry(QRect(1250, 625 - self.desk_h, 580, 280))
+        self.mode_mode1 = QLabel("4x4", self)
+        self.mode_mode1.setFont(self.desc_font)
+        self.mode_mode1.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
+        self.mode_mode1.setStyleSheet('background-color: %s; color: %s' % (self.text_color2, self.text_color1))
+        self.mode_mode1.setGeometry((QRect(650, 480 - self.desk_h, 500, 85)))
+        self.mode_mode2 = QLabel("3x3", self)
+        self.mode_mode2.setFont(self.desc_font)
+        self.mode_mode2.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
+        self.mode_mode2.setStyleSheet('background-color: %s; color: %s' % (self.text_color2, self.text_color1))
+        self.mode_mode2.setGeometry((QRect(1290, 480 - self.desk_h, 500, 85)))
+        self.mode_mode3 = QLabel("быстрая игра", self)
+        self.mode_mode3.setFont(self.desc_font)
+        self.mode_mode3.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
+        self.mode_mode3.setStyleSheet('background-color: %s; color: %s' % (self.text_color2, self.text_color1))
+        self.mode_mode3.setGeometry((QRect(650, 905 - self.desk_h, 500, 85)))
+        self.mode_mode4 = QLabel("пользовательский", self)
+        self.mode_mode4.setFont(self.desc_font)
+        self.mode_mode4.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
+        self.mode_mode4.setStyleSheet('background-color: %s; color: %s' % (self.text_color2, self.text_color1))
+        self.mode_mode4.setGeometry((QRect(1290, 905 - self.desk_h, 500, 85)))
+
+        self.mode_desc1 = QLabel("классический режим игры в 2048 со стандартным полем и правилами", self)
+        self.mode_desc1.setFont(self.desc_font_mini)
+        self.mode_desc1.setWordWrap(True)
+        self.mode_desc1.setAlignment(Qt.AlignTop)
+        self.mode_desc1.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color2))
+        self.mode_desc1.setGeometry((QRect(890, 225 - self.desk_h, 275, 230)))
+        self.mode_desc2 = QLabel("проверьте свои способности на уменьшенном поле!", self)
+        self.mode_desc2.setFont(self.desc_font_mini)
+        self.mode_desc2.setWordWrap(True)
+        self.mode_desc2.setAlignment(Qt.AlignTop)
+        self.mode_desc2.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color2))
+        self.mode_desc2.setGeometry((QRect(890, 650 - self.desk_h, 275, 230)))
+        self.mode_desc3 = QLabel("стандартное поле 4x4, но время на каждое действие ограничено!", self)
+        self.mode_desc3.setFont(self.desc_font_mini)
+        self.mode_desc3.setWordWrap(True)
+        self.mode_desc3.setAlignment(Qt.AlignTop)
+        self.mode_desc3.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color2))
+        self.mode_desc3.setGeometry((QRect(1535, 225 - self.desk_h, 275, 230)))
+        self.mode_desc4 = QLabel("прямоугольное поле? считанные секунды на размышление? в этом режиме можно всё!", self)
+        self.mode_desc4.setFont(self.desc_font_mini)
+        self.mode_desc4.setWordWrap(True)
+        self.mode_desc4.setAlignment(Qt.AlignTop)
+        self.mode_desc4.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color2))
+        self.mode_desc4.setGeometry((QRect(1535, 650 - self.desk_h, 275, 230)))
+
+        # self.mode_img1 = QPixmap(self)
+        # self.mode_img2 = QPixmap(self)
+        # self.mode_img3 = QPixmap(self)
+        # self.mode_img4 = QPixmap(self)
 
         self.menu_font = self.fonts_parent.font()
         self.menu_font.setPointSize(30)
@@ -94,6 +162,7 @@ class MainWindow(QMainWindow):
         self.menu_exit = QPushButton(self, text='выход')
         self.menu_game.clicked.connect(self.window_change_game)
         self.menu_mode.clicked.connect(self.window_change_mode)
+        self.menu_exit.clicked.connect(self.close)
         self.menu_game.setFont(self.menu_font)
         self.menu_mode.setFont(self.menu_font)
         self.menu_theme.setFont(self.menu_font)
@@ -113,7 +182,7 @@ class MainWindow(QMainWindow):
         self.menu_achievments.setGeometry(-475, 575, 450, 100)
         self.menu_rules.setGeometry(-475, 700, 450, 100)
         self.menu_stats.setGeometry(-475, 825, 450, 100)
-        self.menu_exit.setGeometry(-475, 1000, 450, 100)
+        self.menu_exit.setGeometry(-395, 975, 300, 100)
         self.menu_game_h.setStyleSheet("background-color: %s; border-radius: 10px" % self.hollow_color)
         self.menu_mode_h.setStyleSheet("background-color: %s; border-radius: 10px" % self.hollow_color)
         self.menu_theme_h.setStyleSheet("background-color: %s; border-radius: 10px" % self.hollow_color)
@@ -133,11 +202,16 @@ class MainWindow(QMainWindow):
         self.menu_points = (self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats,
                             self.menu_game_h, self.menu_mode_h, self.menu_theme_h, self.menu_achievments_h, self.menu_rules_h, self.menu_stats_h,
                             self.menu_exit, self.menu_tile)
-        self.game_widgets = (self.tiles_lst, self.hollows_lst, 
-                            self.bg_plain, self.best_plain, self.score_plain, self.icon, self.score_value, self.best_value)
-        self.mode_widgets = (self.mode_window_title, self.mode_window_title2)
-        self.windows = (self.game_widgets, self.mode_widgets)
-        self.windows_btns = (self.menu_game, self.menu_mode)
+        self.game_widgets = (self.tiles_lst, self.hollows_lst, self.bg_plain, self.best_plain, self.score_plain, self.icon, self.score_value, self.best_value)
+        self.mode_widgets = (self.mode_title, self.mode_pad1, self.mode_pad2, self.mode_pad3, self.mode_pad4, 
+                             self.mode_mode1, self.mode_mode2, self.mode_mode3, self.mode_mode4,
+                             self.mode_desc1, self.mode_desc2, self.mode_desc3, self.mode_desc4)
+        self.theme_widgets = ()
+        self.achievments_widgets = ()
+        self.rules_widgets = ()
+        self.stats_widgets = ()
+        self.windows = [self.game_widgets, self.mode_widgets, self.theme_widgets, self.achievments_widgets, self.rules_widgets, self.stats_widgets]
+        self.windows_btns = (self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats)
 
     def window_change_game(self):
         global newwin
@@ -175,13 +249,13 @@ class MainWindow(QMainWindow):
                     for j in range(x):
                         window_anim = QPropertyAnimation(widget[i][j][0], b"pos")
                         window_anim.setEasingCurve(QEasingCurve.OutCubic)
-                        window_anim.setEndValue(QPoint(widget[i][j][0].x() + self.desk_w, widget[i][j][0].y()))
+                        window_anim.setEndValue(QPoint(widget[i][j][0].x(), widget[i][j][0].y() + self.desk_h))
                         window_anim.setDuration(600)
                         window_anim_group.addAnimation(window_anim)
             else: 
                 window_anim = QPropertyAnimation(widget, b"pos")
                 window_anim.setEasingCurve(QEasingCurve.OutCubic)
-                window_anim.setEndValue(QPoint(widget.x() + self.desk_w, widget.y()))
+                window_anim.setEndValue(QPoint(widget.x(), widget.y() + self.desk_h))
                 window_anim.setDuration(600)
                 window_anim_group.addAnimation(window_anim)
         menu_tile_anim = QPropertyAnimation(self.menu_tile, b"pos")
@@ -202,12 +276,12 @@ class MainWindow(QMainWindow):
                 for i in range(y):
                     for j in range(x):
                         window_anim = QPropertyAnimation(widget[i][j][0], b"pos")
-                        window_anim.setEndValue(QPoint(widget[i][j][0].x() - self.desk_w, widget[i][j][0].y() - self.desk_h))
+                        window_anim.setEndValue(QPoint(widget[i][j][0].x(), widget[i][j][0].y() - 2 * self.desk_h))
                         window_anim.setDuration(0)
                         window_anim_group.addAnimation(window_anim)
             else:
                 window_anim = QPropertyAnimation(widget, b"pos")
-                window_anim.setEndValue(QPoint(widget.x() - self.desk_w, widget.y() - self.desk_h))
+                window_anim.setEndValue(QPoint(widget.x(), widget.y() - 2 * self.desk_h))
                 window_anim.setDuration(0)
                 window_anim_group.addAnimation(window_anim)
         window_anim_group.start()
@@ -215,28 +289,44 @@ class MainWindow(QMainWindow):
         self.window_timer.stop()
             
     def move_menu(self):
-        menu_anim_group = QParallelAnimationGroup(self)
-        if self.menu_pad.x() == 0:
-            shift1 = -350
-            shift2 = -500
-        else:
-            shift1 = 350
-            shift2 = 500
-        for widget in self.menu_widgets:
-            menu_anim = QPropertyAnimation(widget, b"pos")
-            menu_anim.setEasingCurve(QEasingCurve.OutCubic)
-            menu_anim.setEndValue(QPoint(widget.x() + shift1, widget.y()))
-            menu_anim.setDuration(300)
-            menu_anim_group.addAnimation(menu_anim)
-        for widget in self.menu_points:
-            menu_anim = QPropertyAnimation(widget, b"pos")
-            menu_anim.setEasingCurve(QEasingCurve.OutCubic)
-            menu_anim.setEndValue(QPoint(widget.x() + shift2, widget.y()))
-            menu_anim.setDuration(400)
-            menu_anim_group.addAnimation(menu_anim)
-        menu_anim_group.start()
-        self.menu_btn.setEnabled(False)
-        self.menu_timer.start()
+        if self.isMovingAble():
+            menu_anim_group = QParallelAnimationGroup(self)
+            if self.menu_pad.x() == 0:
+                shift1 = -350
+                shift2 = -500
+            else:
+                shift1 = 350
+                shift2 = 500
+            for widget in self.menu_widgets:
+                menu_anim = QPropertyAnimation(widget, b"pos")
+                menu_anim.setEasingCurve(QEasingCurve.OutCubic)
+                menu_anim.setEndValue(QPoint(widget.x() + shift1, widget.y()))
+                menu_anim.setDuration(300)
+                menu_anim_group.addAnimation(menu_anim)
+            for widget in self.menu_points:
+                menu_anim = QPropertyAnimation(widget, b"pos")
+                menu_anim.setEasingCurve(QEasingCurve.OutCubic)
+                menu_anim.setEndValue(QPoint(widget.x() + shift2, widget.y()))
+                menu_anim.setDuration(400)
+                menu_anim_group.addAnimation(menu_anim)
+            for widget in self.windows[curwin]:
+                if isinstance(widget, list):
+                    for i in range(y):
+                        for j in range(x):
+                            window_anim = QPropertyAnimation(widget[i][j][0], b"pos")
+                            window_anim.setEasingCurve(QEasingCurve.OutCubic)
+                            window_anim.setEndValue(QPoint(widget[i][j][0].x() + shift1 // 2, widget[i][j][0].y()))
+                            window_anim.setDuration(400)
+                            menu_anim_group.addAnimation(window_anim)
+                else:
+                    window_anim = QPropertyAnimation(widget, b"pos")
+                    window_anim.setEasingCurve(QEasingCurve.OutCubic)
+                    window_anim.setEndValue(QPoint(widget.x() + shift1 // 2, widget.y()))
+                    window_anim.setDuration(400)
+                    menu_anim_group.addAnimation(window_anim)
+            menu_anim_group.start()
+            self.menu_btn.setEnabled(False)
+            self.menu_timer.start()
         
     def clr_change(self, clrtheme: str):
         if clrtheme == "classic":
@@ -260,177 +350,146 @@ class MainWindow(QMainWindow):
             self.menu_btn_png = QPixmap('menu_btn_classic.png')
             self.menu_btn_png = self.menu_btn_png.scaled(120, 120)
             self.menu_btn_png.setMask(self.menu_btn_png.createHeuristicMask(Qt.transparent))
+            self.setStyleSheet("background-color: %s" % self.text_color2)
 
-    def move_tiles(self, game_area: list[list], tiles_lst: list[list], direction: str):
+    def move_tiles(self, direction: str):
         global changes
         global score
-        changes = False
         if direction == 'left':
             for i in range(y):
-                for j in range(x):
-                    if game_area[i][j][0] == None or j == 0:
+                for j in range(1, x):
+                    new_pos = j - 1
+                    if self.game_area[i][j][0] == None:
                         continue
-                    cur_pos, new_pos = j, j-1
-                    while new_pos != -1 and game_area[i][new_pos][0] == None:
+                    while new_pos != -1 and self.game_area[i][new_pos][0] == None:
                         new_pos -= 1
-                    if new_pos == -1:
+                    if new_pos == -1 or self.game_area[i][new_pos][2] != self.game_area[i][j][2]:
                         new_pos += 1
-                        game_area[i][new_pos] = game_area[i][cur_pos]
-                        game_area[i][cur_pos] = [None, 2]
-                        changes = True
-                    elif game_area[i][new_pos][1] == game_area[i][cur_pos][1]:
-                        game_area[i][new_pos][1] *= 2
-                        score += game_area[i][new_pos][1]
-                        for r in range(y):
-                            for c in range(x):
-                                if tiles_lst[r][c][0] == game_area[i][cur_pos][0]:
-                                    tiles_lst[r][c][2] = False
-                                    break
-                        game_area[i][cur_pos] = [None, 2]
-                        changes = True
-                    elif game_area[i][new_pos][1] != game_area[i][cur_pos][1]:
-                        if game_area[i][j-1][0] != None:
-                            continue
-                        new_pos += 1
-                        game_area[i][new_pos] = game_area[i][cur_pos]
-                        game_area[i][cur_pos] = [None, 2]
-                        changes = True
+                        self.game_area[i][new_pos] = self.game_area[i][j]
+                        if new_pos != j:
+                            self.game_area[i][j] = [None, None, 2]
+                            changes = True
+                    else:
+                        if self.game_area[i][new_pos][1] == None:
+                            self.game_area[i][new_pos][1] = self.game_area[i][j][0]
+                            self.game_area[i][new_pos][2] *= 2
+                            score += self.game_area[i][new_pos][2]
+                            self.game_area[i][j] = [None, None, 2]
+                            changes = True
 
         if direction == 'right':
             for i in range(y):
-                for j in range(x - 1, -1, -1):
-                    if game_area[i][j][0] == None or j == x - 1:
+                for j in range(x-2, -1, -1):
+                    new_pos = j + 1
+                    if self.game_area[i][j][0] == None:
                         continue
-                    cur_pos, new_pos = j, j+1
-                    while new_pos != x and game_area[i][new_pos][0] == None:
+                    while new_pos != x and self.game_area[i][new_pos][0] == None:
                         new_pos += 1
-                    if new_pos == x:
+                    if new_pos == x or self.game_area[i][new_pos][2] != self.game_area[i][j][2]:
                         new_pos -= 1
-                        game_area[i][new_pos] = game_area[i][cur_pos]
-                        game_area[i][cur_pos] = [None, 2]
-                        changes = True
-                    elif game_area[i][new_pos][1] == game_area[i][cur_pos][1]:
-                        game_area[i][new_pos][1] *= 2
-                        score += game_area[i][new_pos][1]
-                        for r in range(y):
-                            for c in range(x):
-                                if tiles_lst[r][c][0] == game_area[i][cur_pos][0]:
-                                    tiles_lst[r][c][2] = False
-                                    break
-                        game_area[i][cur_pos] = [None, 2]
-                        changes = True
-                    elif game_area[i][new_pos][1] != game_area[i][cur_pos][1]:
-                        if game_area[i][j+1][0] != None:
-                            continue
-                        new_pos -= 1
-                        game_area[i][new_pos] = game_area[i][cur_pos]
-                        game_area[i][cur_pos] = [None, 2]
-                        changes = True
-
-        if direction == 'down':
-            for j in range(x):
-                for i in range(y - 1, -1, -1):
-                    if game_area[i][j][0] == None or i == y - 1:
-                        continue
-                    cur_pos, new_pos = i, i+1
-                    while new_pos != y and game_area[new_pos][j][0] == None:
-                        new_pos += 1
-                    if new_pos == y:
-                        new_pos -= 1
-                        game_area[new_pos][j] = game_area[cur_pos][j]
-                        game_area[cur_pos][j] = [None, 2]
-                        changes = True
-                    elif game_area[new_pos][j][1] == game_area[cur_pos][j][1]:
-                        game_area[new_pos][j][1] *= 2
-                        score += game_area[new_pos][j][1]
-                        for r in range(y):
-                            for c in range(x):
-                                if tiles_lst[r][c][0] == game_area[cur_pos][j][0]:
-                                    tiles_lst[r][c][2] = False
-                                    break
-                        game_area[cur_pos][j] = [None, 2]
-                        changes = True
-                    elif game_area[new_pos][j][1] != game_area[cur_pos][j][1]:
-                        if game_area[i+1][j][0] != None:
-                            continue
-                        new_pos -= 1
-                        game_area[new_pos][j] = game_area[cur_pos][j]
-                        game_area[cur_pos][j] = [None, 2]
-                        changes = True
+                        self.game_area[i][new_pos] = self.game_area[i][j]
+                        if new_pos != j:
+                            self.game_area[i][j] = [None, None, 2]
+                            changes = True
+                    else:
+                        if self.game_area[i][new_pos][1] == None:
+                            self.game_area[i][new_pos][1] = self.game_area[i][j][0]
+                            self.game_area[i][new_pos][2] *= 2
+                            score += self.game_area[i][new_pos][2]
+                            self.game_area[i][j] = [None, None, 2]
+                            changes = True
 
         if direction == 'up':
             for j in range(x):
-                for i in range(y):
-                    if game_area[i][j][0] == None or i == 0:
+                for i in range(1, y):
+                    new_pos = i - 1
+                    if self.game_area[i][j][0] == None:
                         continue
-                    cur_pos, new_pos = i, i-1
-                    while new_pos != y and game_area[new_pos][j][0] == None:
+                    while new_pos != -1 and self.game_area[new_pos][j][0] == None:
                         new_pos -= 1
-                    if new_pos == -1:
+                    if new_pos == -1 or self.game_area[new_pos][j][2] != self.game_area[i][j][2]:
                         new_pos += 1
-                        game_area[new_pos][j] = game_area[cur_pos][j]
-                        game_area[cur_pos][j] = [None, 2]
-                        changes = True
-                    elif game_area[new_pos][j][1] == game_area[cur_pos][j][1]:
-                        game_area[new_pos][j][1] *= 2
-                        score += game_area[new_pos][j][1]
-                        for r in range(y):
-                            for c in range(x):
-                                if tiles_lst[r][c][0] == game_area[cur_pos][j][0]:
-                                    tiles_lst[r][c][2] = False
-                                    break
-                        game_area[cur_pos][j] = [None, 2]
-                        changes = True
-                    elif game_area[new_pos][j][1] != game_area[cur_pos][j][1]:
-                        if game_area[i-1][j][0] != None:
-                            continue
-                        new_pos += 1
-                        game_area[new_pos][j] = game_area[cur_pos][j]
-                        game_area[cur_pos][j] = [None, 2]
-                        changes = True
+                        self.game_area[new_pos][j] = self.game_area[i][j]
+                        if new_pos != i:
+                            self.game_area[i][j] = [None, None, 2]
+                            changes = True
+                    else:
+                        if self.game_area[new_pos][j][1] == None:
+                            self.game_area[new_pos][j][1] = self.game_area[i][j][0]
+                            self.game_area[new_pos][j][2] *= 2
+                            score += self.game_area[new_pos][j][2]
+                            self.game_area[i][j] = [None, None, 2]
+                            changes = True
 
-    def addtile(self, tiles_lst: list[list], game_area: list[list]):
+        if direction == 'down':
+            for j in range(x):
+                for i in range(y-2, -1, -1):
+                    new_pos = i + 1
+                    if self.game_area[i][j][0] == None:
+                        continue
+                    while new_pos != y and self.game_area[new_pos][j][0] == None:
+                        new_pos += 1
+                    if new_pos == y or self.game_area[new_pos][j][2] != self.game_area[i][j][2]:
+                        new_pos -= 1
+                        self.game_area[new_pos][j] = self.game_area[i][j]
+                        if new_pos != i:
+                            self.game_area[i][j] = [None, None, 2]
+                            changes = True
+                    else:
+                        if self.game_area[new_pos][j][1] == None:
+                            self.game_area[new_pos][j][1] = self.game_area[i][j][0]
+                            self.game_area[new_pos][j][2] *= 2
+                            score += self.game_area[new_pos][j][2]
+                            self.game_area[i][j] = [None, None, 2]
+                            changes = True
+
         for i in range(y):
             for j in range(x):
-                if not tiles_lst[i][j][2]:
-                    r, c = random.randint(0, y-1), random.randint(0, x-1)
-                    while game_area[r][c][0] != None:
-                        r, c = random.randint(0, y-1), random.randint(0, x-1)
-                    if random.randint(1, 10) == 1:
-                        tiles_lst[i][j][3], game_area[r][c][1] = 4, 4
-                    else:
-                        tiles_lst[i][j][3], game_area[r][c][1] = 2, 2
-                    game_area[r][c][0] = tiles_lst[i][j][0]
-                    tiles_lst[i][j][1][0] = r
-                    tiles_lst[i][j][1][1] = c
-                    tiles_lst[i][j][2] = True
-                    tiles_lst[i][j][0].setVisible(True)
-                    return
-
-    def new_game(self, xsize, ysize):
+                if self.game_area[i][j][0] != None:
+                    tile_anim = QPropertyAnimation(self.game_area[i][j][0], b"pos")
+                    tile_anim.setEndValue(QPoint(self.game_area_pos[i][j][0], self.game_area_pos[i][j][1]))
+                    tile_anim.setDuration(200)
+                    tile_anim.setEasingCurve(QEasingCurve.OutCubic)
+                    self.pos_anim.addAnimation(tile_anim)
+                    if self.game_area[i][j][1] != None:
+                        tile_anim = QPropertyAnimation(self.game_area[i][j][1], b"pos")
+                        tile_anim.setEndValue(QPoint(self.game_area_pos[i][j][0], self.game_area_pos[i][j][1]))
+                        tile_anim.setDuration(200)
+                        tile_anim.setEasingCurve(QEasingCurve.OutCubic)
+                        self.pos_anim.addAnimation(tile_anim)
+        
+        self.pos_anim.start()
+    def game_window_update(self, xsize, ysize):
+        for widget in self.windows[0]:
+            if isinstance(widget, list):
+                for i in range(y):
+                    for j in range(x):
+                        widget[i][j][0].deleteLater()
+                        del widget[i][j][0]
+            else:
+                widget.deleteLater()
+                del widget
+        self.game_window_init(xsize, ysize)
+        self.game_widgets = (self.tiles_lst, self.hollows_lst, self.bg_plain, self.best_plain, self.score_plain, self.icon, self.score_value, self.best_value)
+        self.windows[0] = self.game_widgets
+        for widget in self.windows[0]:
+            if isinstance(widget, list):
+                for i in range(y):
+                    for j in range(x):
+                        widget[i][j][0].show()
+            else:
+                widget.show()
+        
+    def game_window_init(self, xsize, ysize):
         global x
         global y
         global score
         x = xsize
         y = ysize
         score = 0
-        
-        self.setStyleSheet("background-color: %s" % self.text_color2)
-        
         self.isMovingAble = True
-
-        self.game_area_pos = list()
-        for i in range(y):
-            self.game_area_pos.append([])
-            for j in range(x):
-                self.game_area_pos[i].append([])
-        
-        self.game_area = list()
-        for i in range(y):
-            self.game_area.append([])
-            for j in range(x):
-                self.game_area[i].append([None, 2])        
-        
+        self.game_area_pos = [[[] for j in range(x)] for i in range(y)]
+        self.game_area = [[[None, None, 2] for j in range(x)] for i in range(y)]
         self.color_dict = {2: self.tile_color2,
                            4: self.tile_color4,
                            8: self.tile_color8,
@@ -465,33 +524,29 @@ class MainWindow(QMainWindow):
         self.bg_plain.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color)
         self.bg_plain.setGeometry(round(self.desk_w - 162.5 * x) // 2, round(self.desk_h - 162.5 * y) // 2, round(162.5 * x), round(162.5 * y))
 
-        self.score_plain = QLabel(self)
+        self.score_plain = QLabel("счёт", self)
         self.score_plain.setGeometry((self.desk_w - 650) // 2 + 300, round(self.desk_h - 162.5 * y) // 2 - 100, 150, 75)
         self.score_plain.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color2, self.text_color1))
         self.score_plain.setFont(self.score_plain_font)
         self.score_plain.setAlignment(Qt.AlignHCenter)
-        self.score_plain.setText("счёт")
 
-        self.score_value = QLabel(self)
+        self.score_value = QLabel("0", self)
         self.score_value.setGeometry((self.desk_w - 650) // 2 + 300, round(self.desk_h - 162.5 * y) // 2 - 67, 150, 30)
         self.score_value.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color2, self.text_color2))
         self.score_value.setFont(self.score_plain_font)
         self.score_value.setAlignment(Qt.AlignHCenter)
-        self.score_value.setText("0")
 
-        self.best_plain = QLabel(self)
+        self.best_plain = QLabel("лучший", self)
         self.best_plain.setGeometry((self.desk_w - 650) // 2 + 490, round(self.desk_h - 162.5 * y) // 2 - 100, 150, 75)
         self.best_plain.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color2, self.text_color1))
         self.best_plain.setFont(self.score_plain_font)
         self.best_plain.setAlignment(Qt.AlignHCenter)
-        self.best_plain.setText("лучший")
 
-        self.best_value = QLabel(self)
+        self.best_value = QLabel(str(best), self)
         self.best_value.setGeometry((self.desk_w - 650) // 2 + 490, round(self.desk_h - 162.5 * y) // 2 - 67, 150, 30)
         self.best_value.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color2, self.text_color2))
         self.best_value.setFont(self.score_plain_font)
         self.best_value.setAlignment(Qt.AlignHCenter)
-        self.best_value.setText("0")
 
         self.icon = QLabel(self)
         self.icon.setText("2048")
@@ -512,122 +567,131 @@ class MainWindow(QMainWindow):
             self.tiles_lst.append([])
             for j in range(x):
                 globals()['tile' + str(i*(j+1) + j+1)] = QLabel(self)
-                self.tiles_lst[i].append([globals()['tile' + str(i*(j+1) + j+1)], [0, 0], False, 2])
-
+                self.tiles_lst[i].append([globals()['tile' + str(i*(j+1) + j+1)], False])
+        self.pos_anim = QParallelAnimationGroup()
+        self.size_anim = QParallelAnimationGroup()
         for _ in range(2):
-            self.addtile(self.tiles_lst, self.game_area)
-
+            self.add_tile()
         for i in range(y):
             for j in range(x):
-                if self.tiles_lst[i][j][2]:
-                    size = self.tilesize
-                else:
-                    size = 0
-                if self.tiles_lst[i][j][3] < 8:
-                    text_color = self.text_color1
-                else:
-                    text_color = self.text_color2
-                self.tiles_lst[i][j][0].setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.color_dict[self.tiles_lst[i][j][3]], text_color))
-                self.tiles_lst[i][j][0].setGeometry(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1], size, size)
-                self.hollows_lst[i][j][0].setStyleSheet("background-color: %s; border-radius: 10px" % self.hollow_color)
-                self.hollows_lst[i][j][0].setGeometry(self.game_area_pos[i][j][0], self.game_area_pos[i][j][1], self.tilesize, self.tilesize)
-                self.tiles_lst[i][j][0].setText(str(self.tiles_lst[i][j][3]))
+                self.tiles_lst[i][j][0].setGeometry(self.game_area_pos[i][j][0], self.game_area_pos[i][j][1], 0, 0)
                 self.tiles_lst[i][j][0].setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
                 self.tiles_lst[i][j][0].setFont(self.tile_font)
-                self.tiles_lst[i][j][0].setVisible(self.tiles_lst[i][j][2])
-
+                self.tiles_lst[i][j][0].setVisible(self.tiles_lst[i][j][1])
+                self.hollows_lst[i][j][0].setStyleSheet("background-color: %s; border-radius: 10px" % self.hollow_color)
+                self.hollows_lst[i][j][0].setGeometry(self.game_area_pos[i][j][0], self.game_area_pos[i][j][1], self.tilesize, self.tilesize)
+        
     def enable_moving(self):
-        self.isMovingAble = True
-        self.action_timer.stop()
+        self.timer_times += 1
+        if self.timer_times == 2:
+            self.isMovingAble = True
+            self.action_timer.stop()
+            self.timer_times = 0
+        else:
+            self.add_tile()
+            for i in range(y):
+                for j in range(x):
+                    if self.game_area[i][j][0] != None:
+                        if self.game_area[i][j][2] < 8:
+                            text_color = self.text_color1
+                        else:
+                            text_color = self.text_color2
+                        if self.game_area[i][j][2] < 4096:
+                            bg_color = self.color_dict[self.game_area[i][j][2]]
+                        else:
+                            bg_color = self.text_color1
+                        self.game_area[i][j][0].setStyleSheet(f'background-color: {bg_color}; color: {text_color}; border-radius: 10')
+                        self.game_area[i][j][0].setText(str(self.game_area[i][j][2]))
+                        new_tile_font = self.tile_font
+                        new_tile_font.setPointSize(44 - len(str(self.game_area[i][j][2])) * 4)
+                        if new_tile_font.pointSize() < 7:
+                            new_tile_font.setPointSize(10)
+                        self.game_area[i][j][0].setFont(new_tile_font)
+                        if self.game_area[i][j][1] != None:
+                            self.game_area[i][j][1].setGeometry(self.game_area_pos[i][j][0], self.game_area_pos[i][j][1], 0, 0)
+                            for r in range(y):
+                                for c in range(x):
+                                    if self.tiles_lst[r][c][0] == self.game_area[i][j][1]:
+                                        self.tiles_lst[r][c][1] = False
+                                        self.game_area[i][j][1] = None
 
     def enable_menu_moving(self):
         self.menu_btn.setEnabled(True)
         self.menu_timer.stop()
 
+    def add_tile(self):
+        sec_break = False
+        for i in range(y):
+            if sec_break:
+                break
+            for j in range(x):
+                if not self.tiles_lst[i][j][1]:
+                    self.tiles_lst[i][j][1] = True
+                    r, c = random.randint(0, y-1), random.randint(0, x-1)
+                    while self.game_area[r][c][0] != None:
+                        r, c = random.randint(0, y-1), random.randint(0, x-1)
+                    if random.randint(1, 10) == 1:
+                        self.game_area[r][c][2] = 4
+                    else:
+                        self.game_area[r][c][2] = 2
+                    self.game_area[r][c][0] = self.tiles_lst[i][j][0]
+                    self.game_area[r][c][0].setVisible(True)
+                    self.game_area[r][c][0].setText(str(self.game_area[r][c][2]))
+                    self.game_area[r][c][0].setGeometry(QRect(self.game_area_pos[r][c][0], self.game_area_pos[r][c][1], 0, 0))
+                    new_tile_font = self.tile_font
+                    new_tile_font.setPointSize(44 - len(str(self.game_area[r][c][2])) * 4)
+                    if new_tile_font.pointSize() < 7:
+                            new_tile_font.setPointSize(10)
+                    self.game_area[r][c][0].setFont(new_tile_font)
+                    size_anim = QPropertyAnimation(self.game_area[r][c][0], b'geometry')
+                    size_anim.setStartValue(QRect(self.game_area[r][c][0].geometry().adjusted(70, 70, 0, 0)))
+                    size_anim.setEndValue(QRect(self.game_area[r][c][0].geometry().adjusted(0, 0, self.tilesize, self.tilesize)))
+                    size_anim.setEasingCurve(QEasingCurve.InOutQuad)
+                    size_anim.setDuration(100)
+                    if self.game_area[r][c][2] < 8:
+                        text_color = self.text_color1
+                    else:
+                        text_color = self.text_color2
+                    if self.game_area[r][c][2] < 4096:
+                        bg_color = self.color_dict[self.game_area[r][c][2]]
+                    else:
+                        bg_color = self.text_color1
+                    self.game_area[r][c][0].setStyleSheet(f'background-color: {bg_color}; color: {text_color}; border-radius: 10')
+                    self.size_anim.addAnimation(size_anim)
+                    sec_break = True
+                    break
+            self.size_anim.start()
+
     def keyPressEvent(self, e):
         global changes
         global score
+        global best
         global x
         global y
         changes = False
         if self.isMovingAble and not self.menu_pad.x() == 0:
             self.pos_anim = QParallelAnimationGroup()
             self.size_anim = QParallelAnimationGroup()
-            #self.color_anim = QParallelAnimationGroup()
+            self.color_anim = QParallelAnimationGroup()
             if e.key() == Qt.Key_Q or e.key() == 1049:
                 self.close()
             elif e.key() == Qt.Key_D or e.key() == Qt.Key_Right or e.key() == 1042:
-                self.move_tiles(self.game_area, self.tiles_lst, 'right')
+                self.move_tiles('right')
             elif e.key() == Qt.Key_A or e.key() == Qt.Key_Left or e.key() == 1060:
-                self.move_tiles(self.game_area, self.tiles_lst, 'left')
+                self.move_tiles('left')
             elif e.key() == Qt.Key_W or e.key() == Qt.Key_Up or e.key() == 1062:
-                self.move_tiles(self.game_area, self.tiles_lst, 'up')
+                self.move_tiles('up')
             elif e.key() == Qt.Key_S or e.key() == Qt.Key_Down or e.key() == 1067:
-                self.move_tiles(self.game_area, self.tiles_lst, 'down')
+                self.move_tiles('down')
             elif e.key() == Qt.Key_R:
-                for i in range(y):
-                    for j in range(x):
-                        self.tiles_lst[i][j][0].deleteLater()
-                        self.hollows_lst[i][j][0].deleteLater()
-                self.bg_plain.deleteLater()
-                self.best_plain.deleteLater()
-                self.score_plain.deleteLater()
-                self.icon.deleteLater()
-                self.score_value.deleteLater()
-                self.best_value.deleteLater()
-                self.new_game(x, y)
-                for i in range(y):
-                    for j in range(x):
-                        self.tiles_lst[i][j][0].show()
-                        self.hollows_lst[i][j][0].show()
-                self.bg_plain.show()
-                self.best_plain.show()
-                self.score_plain.show()
-                self.icon.show()
-                self.score_value.show()
-                self.best_value.show()
-        if changes:
-            self.addtile(self.tiles_lst, self.game_area)
-            for i in range(y):
-                for j in range(x):
-                    for r in range(y):
-                        for c in range(x):
-                            if self.game_area[r][c][0] == self.tiles_lst[i][j][0]:
-                                self.tiles_lst[i][j][3] = self.game_area[r][c][1]
-                                self.tiles_lst[i][j][1][0] = r
-                                self.tiles_lst[i][j][1][1] = c
-                    if self.tiles_lst[i][j][3] < 8:
-                        text_color = self.text_color1
-                    else:
-                        text_color = self.text_color2
-                    self.tiles_lst[i][j][0].setText(str(self.tiles_lst[i][j][3]))
-                    self.tiles_lst[i][j][0].setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.color_dict[self.tiles_lst[i][j][3]], text_color))
-                    if not self.tiles_lst[i][j][2]:
-                        if self.tiles_lst[i][j][0].isVisible():
-                            self.tiles_lst[i][j][0].setVisible(False)
-                    if self.tiles_lst[i][j][2]:
-                        anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"pos")
-                        anim.setEasingCurve(QEasingCurve.OutCubic)
-                        if self.tiles_lst[i][j][0].isVisible():
-                            anim.setDuration(250)
-                        else:
-                            self.tiles_lst[i][j][0].setVisible(True)
-                            anim.setDuration(0)
-                        anim.setEndValue(QPoint(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1]))
-                        self.pos_anim.addAnimation(anim)
-                        if self.tiles_lst[i][j][0].size() == QSize(0, 0):
-                            anim = QPropertyAnimation(self.tiles_lst[i][j][0], b"geometry")
-                            anim.setEasingCurve(QEasingCurve.OutCubic)
-                            anim.setDuration(250)
-                            anim.setStartValue(QRect(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0] + 70, self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1] + 70, 0, 0))
-                            anim.setEndValue(QRect(self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][0], self.game_area_pos[self.tiles_lst[i][j][1][0]][self.tiles_lst[i][j][1][1]][1], self.tilesize, self.tilesize))
-                            self.size_anim.addAnimation(anim)
-
-            self.pos_anim.start()
-            self.size_anim.start()
-            self.score_value.setText(str(score))
-            self.isMovingAble = False
-            self.action_timer.start()
+                self.game_window_update(x, y)
+            if changes and not e.key() == Qt.Key_R:
+                self.score_value.setText(str(score))
+                if score > best:
+                    best = score
+                    self.best_value.setText(str(best))
+                self.isMovingAble = False
+                self.action_timer.start()
 
 app = QApplication(sys.argv)
 main_window = MainWindow()
