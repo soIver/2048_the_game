@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
         best_tile_mode2 = 0
         best_tile_mode3 = 0
         best_tile_mode4 = 0
-        self.best_tiles_lst = [best_tile_mode1, best_tile_mode2, best_tile_mode3, best_tile_mode4]
+        self.best_tiles_lst = [best_tile_mode1, best_tile_mode2, best_tile_mode3, best_tile_mode3]
         self.merge_cnt = 0
         self.clrtheme = 'classic'
         self.achievments_cnt = 0
