@@ -1,10 +1,12 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from PyQt5 import QtWidgets
 import sys
 import random
 import math
+import pandas
+import os.path
+import pyreadstat
 
 class Timer(QWidget):
     def __init__(self, parent=None):
@@ -21,7 +23,7 @@ class Timer(QWidget):
         self.color_timer.setInterval(350)
         self.color_timer.timeout.connect(self.change_tile_color)
         self.shifty = round(162.5 * (self.ysize - 1)) // (self.interval - 1)
-        if main_window.isMenuActive and main_window.isGameStoped and main_window.curwin == 0:
+        if main_window.isMenuActive and main_window.isGameEnded and main_window.curwin == 0:
             self.shiftx = 175
         else:
             self.shiftx = 0
@@ -88,6 +90,7 @@ class Timer(QWidget):
         anim.setDuration(200)
         anim.setEasingCurve(QEasingCurve.InOutCubic)
         anim.setEndValue(QRect(self.timer_tile.geometry().adjusted(0, 150, 0, -150)))
+        anim.finished.connect(lambda: main_window.grid.removeWidget(main_window.timer_tile))
         anim.start()
 
     def appear(self):
@@ -110,74 +113,74 @@ class SettingsPanel(QWidget):
         self.pad = QWidget(self)
         self.pad.setGeometry(QRect(610, 200, 1220, 705))
         self.title = QLabel('параметры новой игры', self)
-        self.title.setFont(main_window.icon_font_mini)
+        self.title.setFont(main_window.font_35)
         self.title.setGeometry(QRect(610, 210, 1220, 100))
         self.title.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         self.pad_mini1 = QLabel('номиналы\nновых плиток', self)
-        self.pad_mini1.setFont(main_window.desc_font_mini)
+        self.pad_mini1.setFont(main_window.font_15)
         self.pad_mini1.setGeometry(QRect(670, 325, 250, 300))
         self.pad_mini1.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
         self.pad_mini2 = QLabel('шансы\nпоявления', self)
-        self.pad_mini2.setFont(main_window.desc_font_mini)
+        self.pad_mini2.setFont(main_window.font_15)
         self.pad_mini2.setGeometry(QRect(970, 325, 250, 300))
         self.pad_mini2.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
         self.pad_mini3 = QLabel('цель:', self)
-        self.pad_mini3.setFont(main_window.desc_font)
+        self.pad_mini3.setFont(main_window.font_25)
         self.pad_mini3.setGeometry(QRect(670, 650, 550, 100))
         self.pad_mini4 = QLabel('настройка таймера', self)
-        self.pad_mini4.setFont(main_window.tile_font3)
+        self.pad_mini4.setFont(main_window.font_20)
         self.pad_mini4.setGeometry(QRect(1275, 325, 515, 300))
         self.pad_mini4.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
         self.pad_mini4_2 = QLabel('секунд:',self)
-        self.pad_mini4_2.setFont(main_window.desc_font)
+        self.pad_mini4_2.setFont(main_window.font_25)
         self.pad_mini4_2.setGeometry(QRect(1275, 530, 515, 75))
         self.pad_mini5 = QLabel('высота поля:', self)
-        self.pad_mini5.setFont(main_window.tile_font3)
+        self.pad_mini5.setFont(main_window.font_20)
         self.pad_mini5.setGeometry(QRect(1275, 650, 515, 100))
         self.pad_mini6 = QLabel('ширина поля:', self)
-        self.pad_mini6.setFont(main_window.tile_font3)
+        self.pad_mini6.setFont(main_window.font_20)
         self.pad_mini6.setGeometry(QRect(1275, 780, 515, 100))
         self.line_nom1 = QLineEdit('2', self)
         self.line_nom1.setMaxLength(4)
-        self.line_nom1.setFont(main_window.desc_font)
+        self.line_nom1.setFont(main_window.font_25)
         self.line_nom1.setGeometry(QRect(690, 425, 210, 75))
         self.line_nom2 = QLineEdit('4', self)
         self.line_nom2.setMaxLength(4)
-        self.line_nom2.setFont(main_window.desc_font)
+        self.line_nom2.setFont(main_window.font_25)
         self.line_nom2.setGeometry(QRect(690, 530, 210, 75))
         self.line_chance1 = QLineEdit('90', self)
         self.line_chance1.setMaxLength(2)
-        self.line_chance1.setFont(main_window.desc_font)
+        self.line_chance1.setFont(main_window.font_25)
         self.line_chance1.setGeometry(QRect(990, 425, 210, 75))
         self.line_chance2 = QLineEdit('10', self)
         self.line_chance2.setMaxLength(2)
-        self.line_chance2.setFont(main_window.desc_font)
+        self.line_chance2.setFont(main_window.font_25)
         self.line_chance2.setGeometry(QRect(990, 530, 210, 75))
         self.line_winnomin = QLineEdit('2048', self)
         self.line_winnomin.setMaxLength(6)
-        self.line_winnomin.setFont(main_window.desc_font)
+        self.line_winnomin.setFont(main_window.font_25)
         self.line_winnomin.setGeometry(QRect(880, 662, 320, 75))
         self.line_interval = QLineEdit('3', self)
         self.line_interval.setMaxLength(2)
-        self.line_interval.setFont(main_window.desc_font)
+        self.line_interval.setFont(main_window.font_25)
         self.line_interval.setGeometry(QRect(1550, 530, 210, 75))
         self.line_ysize = QLineEdit('4', self)
         self.line_ysize.setMaxLength(1)
-        self.line_ysize.setFont(main_window.desc_font)
+        self.line_ysize.setFont(main_window.font_25)
         self.line_ysize.setGeometry(QRect(1630, 662, 130, 75))
         self.line_xsize = QLineEdit('4', self)
         self.line_xsize.setMaxLength(1)
-        self.line_xsize.setFont(main_window.desc_font)
+        self.line_xsize.setFont(main_window.font_25)
         self.line_xsize.setGeometry(QRect(1630, 792, 130, 75))
         validator = QRegExpValidator(QRegExp(r'[0-9]+'))
         for line in (self.line_nom1, self.line_nom2, self.line_chance1, self.line_chance2, self.line_interval, self.line_winnomin, self.line_xsize, self.line_ysize):
             line.setValidator(validator)
         self.start_btn = QPushButton('начать', self)
-        self.start_btn.setFont(main_window.desc_font)
+        self.start_btn.setFont(main_window.font_25)
         self.start_btn.setGeometry(QRect(670, 780, 250, 100))
         self.start_btn.clicked.connect(lambda: main_window.new_mode_start(3))
         self.back_btn = QPushButton('назад',self)
-        self.back_btn.setFont(main_window.desc_font)
+        self.back_btn.setFont(main_window.font_25)
         self.back_btn.setGeometry(QRect(970, 780, 250, 100))
         self.back_btn.clicked.connect(self.move)
         main_window.mode_btn4.clicked.connect(self.move)
@@ -322,35 +325,10 @@ class SettingsPanel(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.ysize = 0
-        self.xsize = 0
-        self.winnomin = 0
-        self.new_tile_nomin1 = 0
-        self.new_tile_nomin2 = 0
-        self.chance = 0
-        self.score = 0
-        self.isTimerEnable = False
-        self.timer_interval = 0
-        self.curmode = 0
-        best_score_mode1 = 0
-        best_score_mode2 = 0
-        best_score_mode3 = 0
-        best_score_mode4 = 0
-        self.best_scores_lst = [best_score_mode1, best_score_mode2, best_score_mode3, best_score_mode4]
-        best_tile_mode1 = 0
-        best_tile_mode2 = 0
-        best_tile_mode3 = 0
-        best_tile_mode4 = 0
-        self.best_tiles_lst = [best_tile_mode1, best_tile_mode2, best_tile_mode3, best_tile_mode3, best_tile_mode4]
-        self.merge_cnt = 0
-        self.clrtheme = 'classic'
-        self.achievments_cnt = 0
         self.curwin = 0
         self.newwin = 0
         self.isWindowAnimEnd = True
         self.isMenuActive = False
-        self.isGameStoped = False
-        self.isWinner = False
         self.changes = False
         self.opacity = QGraphicsOpacityEffect()
         self.opacity.setOpacity(0)
@@ -358,37 +336,34 @@ class MainWindow(QMainWindow):
         parent_font = fonts_parent.font()
         parent_font.setBold(True)
         fonts_parent.setFont(parent_font)
-        self.score_plain_font = fonts_parent.font()
-        self.score_plain_font.setPointSize(14)
+        self.font_var = fonts_parent.font()
         self.font_50 = fonts_parent.font()
         self.font_50.setPointSize(50)
-        self.tile_font = fonts_parent.font()
-        self.tile_font.setPointSize(40)
-        self.tile_font2 = fonts_parent.font()
-        self.tile_font2.setPointSize(25)
-        self.tile_font3 = fonts_parent.font()
-        self.tile_font3.setPointSize(20)
-        self.tile_font4 = fonts_parent.font()
-        self.tile_font4.setPointSize(18)
-        self.icon_font_mini = fonts_parent.font()
-        self.icon_font_mini.setPointSize(35)
-        self.tile_font5 = fonts_parent.font()
-        self.tile_font5.setPointSize(30)
-        self.menu_font = fonts_parent.font()
-        self.menu_font.setPointSize(30)
-        self.desc_font = fonts_parent.font()
-        self.desc_font.setPointSize(25)
-        self.achiev_font = fonts_parent.font()
-        self.achiev_font.setPointSize(18)
-        self.achiev_font_mini = fonts_parent.font()
-        self.achiev_font_mini.setPointSize(16)
-        self.desc_font_mini = fonts_parent.font()
-        self.desc_font_mini.setPointSize(15)
-        self.achiev_desc_font = fonts_parent.font()
-        self.achiev_desc_font.setPointSize(10)
-        self.moving_timer = QTimer()
-        self.moving_timer.setInterval(100)
-        self.moving_timer.timeout.connect(self.enable_moving)
+        self.font_40 = fonts_parent.font()
+        self.font_40.setPointSize(40)
+        self.font_25 = fonts_parent.font()
+        self.font_25.setPointSize(25)
+        self.font_20 = fonts_parent.font()
+        self.font_20.setPointSize(20)
+        self.font_35 = fonts_parent.font()
+        self.font_35.setPointSize(35)
+        self.font_30 = fonts_parent.font()
+        self.font_30.setPointSize(30)
+        self.font_25 = fonts_parent.font()
+        self.font_25.setPointSize(25)
+        self.font_18 = fonts_parent.font()
+        self.font_18.setPointSize(18)
+        self.font_16 = fonts_parent.font()
+        self.font_16.setPointSize(16)
+        self.font_15 = fonts_parent.font()
+        self.font_15.setPointSize(15)
+        self.font_14 = fonts_parent.font()
+        self.font_14.setPointSize(14)
+        self.font_10 = fonts_parent.font()
+        self.font_10.setPointSize(10)
+        self.move_timer = QTimer()
+        self.move_timer.setInterval(100)
+        self.move_timer.timeout.connect(self.enable_moving)
         self.action_timer = QTimer()
         self.action_timer.setInterval(100)
         self.action_timer.timeout.connect(self.after_action)
@@ -409,21 +384,116 @@ class MainWindow(QMainWindow):
         self.change_mode_timer.timeout.connect(self.change_mode_timer_action)
         self.setWindowTitle('2048')
         self.setWindowFlag(Qt.FramelessWindowHint)
-        self.desk_w = QApplication.desktop().width()
-        self.desk_h = QApplication.desktop().height()
+        self.desk_w = 1920
+        self.desk_h = 1200
         self.centralWidget = QWidget()
         self.setCentralWidget(self.centralWidget)
         self.grid = QGridLayout(self.centralWidget)
+        self.achievments_window_init()
+        self.read_save_file()
         self.choose_mode(self.curmode)
+        self.menu_init()
         self.game_window_init()
         self.mode_window_init()
         self.theme_window_init()
-        self.achievments_window_init()
         self.rules_window_init()
         self.stats_window_init()
-        self.menu_init()
         self.windows = [self.game_widgets, self.mode_widgets, self.theme_widgets, self.achievments_widgets, self.rules_widgets, self.stats_widgets]
         self.windows_btns = [self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats]
+    
+    def read_save_file(self):
+        if os.path.exists(save_path):
+            self.isSaveExists = True
+            df = pandas.read_spss(save_path)
+            self.df_val = df['value']
+            self.clrtheme = str(self.df_val[0])
+            self.curmode = int(self.df_val[1])
+            self.ysize = int(self.df_val[2])
+            self.xsize = int(self.df_val[3])
+            self.winnomin = int(self.df_val[4])
+            self.new_tile_nomin1 = int(self.df_val[5])
+            self.new_tile_nomin2 = int(self.df_val[6])
+            self.chance = int(self.df_val[7])
+            self.score = int(self.df_val[8])
+            self.timer_interval = int(self.df_val[9])
+            self.merge_cnt = int(self.df_val[10])
+            self.isTimerEnable = self.df_val[11]
+            self.isGameEnded = self.df_val[12]
+            self.isWinner = self.df_val[13]
+            best_scores_lst = self.df_val[14].split()
+            best_tiles_lst = self.df_val[15].split()
+            for i in range(4):
+                best_scores_lst[i] = int(best_scores_lst[i])
+                best_tiles_lst[i] = int(best_tiles_lst[i])
+            self.best_scores_lst = best_scores_lst 
+            self.best_tiles_lst = best_tiles_lst
+            achievments_state = self.df_val[16].split()
+            self.achievments_cnt = int(achievments_state[8])
+            i = 0
+            for key in self.achievments_dict.keys():
+                self.achievments_dict[key] = bool(int(achievments_state[i]))
+                i += 1
+            game_area_config = self.df_val[17].split()
+            game_area_config[-1] = int(game_area_config[-1])
+            for i in range(game_area_config[-1]):
+                newel = game_area_config[i].split(',')
+                for j in range(3):
+                    newel[j] = int(newel[j])
+                game_area_config[i] = newel
+            self.game_area_config = game_area_config
+            
+        else:
+            self.isSaveExists = False
+            self.curmode = 0
+            self.ysize = 0
+            self.xsize = 0
+            self.winnomin = 0
+            self.new_tile_nomin1 = 0
+            self.new_tile_nomin2 = 0
+            self.chance = 0
+            self.score = 0
+            self.isTimerEnable = False
+            self.timer_interval = 0
+            self.best_scores_lst = [0, 0, 0, 0]
+            self.best_tiles_lst = [0, 0, 0, 0]
+            self.merge_cnt = 0
+            self.clrtheme = 'classic'
+            self.achievments_cnt = 0
+            self.isGameEnded = False
+            self.isWinner = False
+
+    def write_save_file(self):
+        cnt = 0
+        game_area_config = ''
+        achievments_state = ''
+        best_scores = ''
+        best_tiles = ''
+        for i in range(self.ysize):
+            for j in range(self.xsize):
+                if not self.game_area[i][j][0] == None:
+                    cnt += 1
+                    game_area_config += str(i) + ',' + str(j) + ',' + str(self.game_area[i][j][2]) + ' '
+        game_area_config += str(cnt)
+        for state in self.achievments_dict.values():
+            if state:
+                achievments_state += '1' + ' '
+            else:
+                achievments_state += '0' + ' '
+        achievments_state += str(self.achievments_cnt)
+        for i in range(4):
+            best_scores += str(self.best_scores_lst[i])
+            best_tiles += str(self.best_tiles_lst[i])
+            if not i == 3:
+                best_scores += ' '
+                best_tiles += ' '
+        var_lst = [self.clrtheme, self.curmode, self.ysize, self.xsize, self.winnomin,
+                   self.new_tile_nomin1, self.new_tile_nomin2, 
+                   self.chance, self.score, self.timer_interval, self.merge_cnt, 
+                   self.isTimerEnable, self.isGameEnded, self.isWinner,
+                   best_scores, best_tiles, achievments_state, game_area_config]
+        data = {'value': var_lst}
+        df = pandas.DataFrame(data=data)
+        pyreadstat.write_sav(df, save_path)
 
     def choose_mode(self, mode: int):
         self.curmode = mode
@@ -496,6 +566,8 @@ class MainWindow(QMainWindow):
                             self.achievments_dict[self.achiev6_ico] = True
                             self.achievments_cnt += 1
                             self.show_new_achievment_msg()
+                    case 3:
+                        return
         if self.merge_cnt == 100000 and not self.achievments_dict[self.achiev7_ico]:
             self.achievments_dict[self.achiev7_ico] = True
             self.achievments_cnt += 1
@@ -551,7 +623,7 @@ class MainWindow(QMainWindow):
                 return
         if self.isTimerEnable:
             self.timer_tile.stop()
-        self.isGameStoped = True
+        self.isGameEnded = True
         self.winlose_msg_text.setText(text)
         btn1.setGeometry(QRect(btn1.geometry().adjusted(0, 0, 270, 80)))
         btn2.setGeometry(QRect(btn2.geometry().adjusted(0, 0, 270, 80)))
@@ -582,146 +654,145 @@ class MainWindow(QMainWindow):
         self.stats_ac_val.setText(str(self.achievments_cnt))
 
     def clr_change(self, clrtheme: str):
-        if not (self.isTimerEnable and not self.isGameStoped and self.curwin == 2):
-            self.clrtheme = clrtheme
-            match clrtheme:
-                case 'classic':
-                    self.tile_color2 = '#eee4da'
-                    self.tile_color4 = '#eee1c9'
-                    self.tile_color8 = '#f3b27a'
-                    self.tile_color16 = '#f69664'
-                    self.tile_color32 = '#f77c5f'
-                    self.tile_color64 = '#f75f3b'
-                    self.tile_color128 = '#f8d669'
-                    self.tile_color256 = '#f8df5a'
-                    self.tile_color512 = '#ffe03e'
-                    self.tile_color1024 = '#ffda18'
-                    self.tile_color2048 = '#ffd600'
-                    self.pad_color = '#bbada0'
-                    self.text_color1 = '#776e65'
-                    self.text_color2 = '#f9f6f2'
-                    self.hollow_color = '#cdc1b4'
-                case 'cold':
-                    self.tile_color2 = '#DAEEEA'
-                    self.tile_color4 = '#D1DDE4'
-                    self.tile_color8 = '#80DBED'
-                    self.tile_color16 = '#5AB3CB'
-                    self.tile_color32 = '#5696AB'
-                    self.tile_color64 = '#04597C'
-                    self.tile_color128 = '#52A499'
-                    self.tile_color256 = '#458D83'
-                    self.tile_color512 = '#48746E'
-                    self.tile_color1024 = '#4D6E69'
-                    self.tile_color2048 = '#38544A'
-                    self.pad_color = '#A0B3BB'
-                    self.text_color1 = '#657477'
-                    self.text_color2 = '#F2F7F9'
-                    self.hollow_color = '#BED1D6'
-                case 'gray':
-                    self.tile_color2 = '#E2E2E2'
-                    self.tile_color4 = '#CECECE'
-                    self.tile_color8 = '#BEBEBE'
-                    self.tile_color16 = '#959595'
-                    self.tile_color32 = '#7B7B7B'
-                    self.tile_color64 = '#6E6E6E'
-                    self.tile_color128 = '#525252'
-                    self.tile_color256 = '#434343'
-                    self.tile_color512 = '#383838'
-                    self.tile_color1024 = '#323232'
-                    self.tile_color2048 = '#2D2D2D'
-                    self.pad_color = '#5B5B5B'
-                    self.text_color1 = '#464646'
-                    self.text_color2 = '#FAFAFA'
-                    self.hollow_color = '#676767'
-            self.mode1_png = QPixmap(f'sprites\{clrtheme}\mode1.png')
-            self.mode1_png.setMask(self.mode1_png.createHeuristicMask(Qt.transparent))
-            self.mode2_png = QPixmap(f'sprites\{clrtheme}\mode2.png')
-            self.mode2_png.setMask(self.mode2_png.createHeuristicMask(Qt.transparent))
-            self.mode3_png = QPixmap(f'sprites\{clrtheme}\mode3.png')
-            self.mode3_png.setMask(self.mode3_png.createHeuristicMask(Qt.transparent))
-            self.mode4_png = QPixmap(f'sprites\{clrtheme}\mode4.png')
-            self.mode4_png.setMask(self.mode4_png.createHeuristicMask(Qt.transparent))
-            self.menu_btn_png = QPixmap(f'sprites\{clrtheme}\menu_btn.png')
-            self.menu_btn_png = self.menu_btn_png.scaled(120, 120)
-            self.menu_btn_png.setMask(self.menu_btn_png.createHeuristicMask(Qt.transparent))
-            self.theme1_png = QPixmap(r'sprites\theme1.png')
-            self.theme1_png.setMask(self.theme1_png.createHeuristicMask(Qt.transparent))
-            self.theme2_png = QPixmap(r'sprites\theme2.png')
-            self.theme2_png.setMask(self.theme2_png.createHeuristicMask(Qt.transparent))
-            self.theme3_png = QPixmap(r'sprites\theme3.png')
-            self.theme3_png.setMask(self.theme3_png.createHeuristicMask(Qt.transparent))
-            self.color_dict = {2: self.tile_color2,
-                            4: self.tile_color4,
-                            8: self.tile_color8,
-                            16: self.tile_color16,
-                            32: self.tile_color32,
-                            64: self.tile_color64,
-                            128: self.tile_color128,
-                            256: self.tile_color256,
-                            512: self.tile_color512,
-                            1024: self.tile_color1024,
-                            2048: self.tile_color2048
-                            }
-            self.mode_img1.setPixmap(self.mode1_png)
-            self.mode_img2.setPixmap(self.mode2_png)
-            self.mode_img3.setPixmap(self.mode3_png)
-            self.mode_img4.setPixmap(self.mode4_png)
-            self.theme1.setPixmap(self.theme1_png)
-            self.theme2.setPixmap(self.theme2_png)
-            self.theme3.setPixmap(self.theme3_png)
-            self.menu_rnd.setPixmap(self.menu_btn_png)
-            self.setStyleSheet("background-color: %s" % self.text_color2)
-            for widget in (self.mode_pad1, self.mode_pad2, self.mode_pad3, self.mode_pad4):
-                widget.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
-            for widget in (self.mode_mode1, self.mode_mode2, self.mode_mode3, self.mode_mode4):
-                widget.setStyleSheet('background-color: %s; color: %s' % (self.text_color2, self.text_color1))
-            for widget in (self.mode_desc1, self.mode_desc2, self.mode_desc3, self.mode_desc4):
-                widget.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color2))
-            for widget in (self.theme1, self.theme2, self.theme3):
-                widget.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color)
-            for widget in (self.achiev1_pad, self.achiev2_pad, self.achiev3_pad, self.achiev4_pad, self.achiev5_pad, self.achiev6_pad, self.achiev7_pad, self.achiev8_pad):
-                widget.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
-            for widget in (self.achiev1_title, self.achiev2_title, self.achiev3_title, self.achiev4_title, self.achiev5_title, self.achiev6_title, self.achiev7_title, self.achiev8_title, self.achiev8_2_title):
-                widget.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color2))
-            for widget in (self.achiev1_ico, self.achiev2_ico, self.achiev3_ico, self.achiev4_ico, self.achiev5_ico, self.achiev6_ico, self.achiev7_ico, self.achiev8_ico):
-                widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.hollow_color, self.hollow_color))
-            for widget in (self.achiev1_desc, self.achiev2_desc, self.achiev3_desc, self.achiev4_desc, self.achiev5_desc, self.achiev6_desc, self.achiev7_desc, self.achiev8_desc):
-                widget.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color1))
-            for widget in (self.mode_title, self.theme_title, self.rules_title, self.rules_rules, self.achievments_title, self.stats_title, self.icon):
-                widget.setStyleSheet('color: %s' % self.text_color1)
-            for widget in (self.stats_pad1, self.stats_pad2, self.stats_pad3, self.stats_pad4):
-                widget.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
-            for widget in (self.stats_mode_title1, self.stats_mode_title2, self.stats_mode_title3, self.stats_mode_title4):
-                widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.pad_color, self.text_color1))
-            for widget in (self.stats_bs1, self.stats_bs2, self.stats_bs3, self.stats_bt1, self.stats_bt2, self.stats_bt3, self.stats_ttm, self.stats_ac):
-                widget.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color1))
-            for widget in (self.stats_bs1_val, self.stats_bs2_val, self.stats_bs3_val, self.stats_bt1_val, self.stats_bt2_val, self.stats_bt3_val, self.stats_ttm_val, self.stats_ac_val):
-                widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px; padding: 1px' % (self.text_color1, self.text_color2))
-            for widget in (self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats):
-                widget.setStyleSheet("background-color: rgba(0, 0, 0, 0.0); color: %s" % self.text_color1)
-            for widget in (self.menu_game_h, self.menu_mode_h, self.menu_theme_h, self.menu_achievments_h, self.menu_rules_h, self.menu_stats_h):
-                widget.setStyleSheet("background-color: %s; color: %s; border-radius: 10px; padding: 10px" % (self.hollow_color, self.text_color1))
-            for widget in (self.score_plain, self.best_plain):
-                widget.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color2, self.text_color1))
-            for widget in (self.score_value, self.best_value):
-                widget.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color2, self.text_color2))
-            for widget in (self.new_game_btn_panel, self.change_mode_btn_panel, self.continue_game_btn_panel):
-                widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.tile_color2, self.text_color1))
-            self.menu_pad.setStyleSheet("background-color: %s" % self.pad_color)
-            self.menu_menu.setStyleSheet("background-color: %s; border-radius: 75px" % self.tile_color2)
-            self.menu_txt.setStyleSheet("background-color: %s; color: %s" % (self.tile_color2, self.text_color1))
-            self.menu_rnd.setStyleSheet("background-color: %s; border-radius: 60" % self.tile_color2)
-            self.menu_exit.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color32, self.text_color2))
-            self.menu_tile.setStyleSheet("background-color: %s; border-radius: 10px" % self.tile_color2)
-            self.bg_plain.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color)
-            self.winlose_msg_pad.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color)
-            self.winlose_msg_text.setStyleSheet('background-color: rgba(0, 0, 0, 0.0); color: %s' % self.text_color2)
-            self.achievment_msg_pad.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
-            self.achievment_msg_text.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.pad_color, self.text_color1))
-            self.achievment_msg_tile.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.tile_color2, self.text_color1))
-            settings_panel.clr_change()
-            self.achievments_check()
-            self.set_tiles_style()
+        self.clrtheme = clrtheme
+        match clrtheme:
+            case 'classic':
+                self.tile_color2 = '#eee4da'
+                self.tile_color4 = '#eee1c9'
+                self.tile_color8 = '#f3b27a'
+                self.tile_color16 = '#f69664'
+                self.tile_color32 = '#f77c5f'
+                self.tile_color64 = '#f75f3b'
+                self.tile_color128 = '#f8d669'
+                self.tile_color256 = '#f8df5a'
+                self.tile_color512 = '#ffe03e'
+                self.tile_color1024 = '#ffda18'
+                self.tile_color2048 = '#ffd600'
+                self.pad_color = '#bbada0'
+                self.text_color1 = '#776e65'
+                self.text_color2 = '#f9f6f2'
+                self.hollow_color = '#cdc1b4'
+            case 'cold':
+                self.tile_color2 = '#DAEEEA'
+                self.tile_color4 = '#D1DDE4'
+                self.tile_color8 = '#80DBED'
+                self.tile_color16 = '#5AB3CB'
+                self.tile_color32 = '#5696AB'
+                self.tile_color64 = '#04597C'
+                self.tile_color128 = '#52A499'
+                self.tile_color256 = '#458D83'
+                self.tile_color512 = '#48746E'
+                self.tile_color1024 = '#4D6E69'
+                self.tile_color2048 = '#38544A'
+                self.pad_color = '#A0B3BB'
+                self.text_color1 = '#657477'
+                self.text_color2 = '#F2F7F9'
+                self.hollow_color = '#BED1D6'
+            case 'gray':
+                self.tile_color2 = '#E2E2E2'
+                self.tile_color4 = '#CECECE'
+                self.tile_color8 = '#BEBEBE'
+                self.tile_color16 = '#959595'
+                self.tile_color32 = '#7B7B7B'
+                self.tile_color64 = '#6E6E6E'
+                self.tile_color128 = '#525252'
+                self.tile_color256 = '#434343'
+                self.tile_color512 = '#383838'
+                self.tile_color1024 = '#323232'
+                self.tile_color2048 = '#2D2D2D'
+                self.pad_color = '#5B5B5B'
+                self.text_color1 = '#464646'
+                self.text_color2 = '#FAFAFA'
+                self.hollow_color = '#676767'
+        self.mode1_png = QPixmap(f'sprites\{clrtheme}\mode1.png')
+        self.mode1_png.setMask(self.mode1_png.createHeuristicMask(Qt.transparent))
+        self.mode2_png = QPixmap(f'sprites\{clrtheme}\mode2.png')
+        self.mode2_png.setMask(self.mode2_png.createHeuristicMask(Qt.transparent))
+        self.mode3_png = QPixmap(f'sprites\{clrtheme}\mode3.png')
+        self.mode3_png.setMask(self.mode3_png.createHeuristicMask(Qt.transparent))
+        self.mode4_png = QPixmap(f'sprites\{clrtheme}\mode4.png')
+        self.mode4_png.setMask(self.mode4_png.createHeuristicMask(Qt.transparent))
+        self.menu_btn_png = QPixmap(f'sprites\{clrtheme}\menu_btn.png')
+        self.menu_btn_png = self.menu_btn_png.scaled(120, 120)
+        self.menu_btn_png.setMask(self.menu_btn_png.createHeuristicMask(Qt.transparent))
+        self.theme1_png = QPixmap(r'sprites\theme1.png')
+        self.theme1_png.setMask(self.theme1_png.createHeuristicMask(Qt.transparent))
+        self.theme2_png = QPixmap(r'sprites\theme2.png')
+        self.theme2_png.setMask(self.theme2_png.createHeuristicMask(Qt.transparent))
+        self.theme3_png = QPixmap(r'sprites\theme3.png')
+        self.theme3_png.setMask(self.theme3_png.createHeuristicMask(Qt.transparent))
+        self.color_dict = {2: self.tile_color2,
+                        4: self.tile_color4,
+                        8: self.tile_color8,
+                        16: self.tile_color16,
+                        32: self.tile_color32,
+                        64: self.tile_color64,
+                        128: self.tile_color128,
+                        256: self.tile_color256,
+                        512: self.tile_color512,
+                        1024: self.tile_color1024,
+                        2048: self.tile_color2048
+                        }
+        self.mode_img1.setPixmap(self.mode1_png)
+        self.mode_img2.setPixmap(self.mode2_png)
+        self.mode_img3.setPixmap(self.mode3_png)
+        self.mode_img4.setPixmap(self.mode4_png)
+        self.theme1.setPixmap(self.theme1_png)
+        self.theme2.setPixmap(self.theme2_png)
+        self.theme3.setPixmap(self.theme3_png)
+        self.menu_rnd.setPixmap(self.menu_btn_png)
+        self.setStyleSheet("background-color: %s" % self.text_color2)
+        for widget in (self.mode_pad1, self.mode_pad2, self.mode_pad3, self.mode_pad4):
+            widget.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
+        for widget in (self.mode_mode1, self.mode_mode2, self.mode_mode3, self.mode_mode4):
+            widget.setStyleSheet('background-color: %s; color: %s' % (self.text_color2, self.text_color1))
+        for widget in (self.mode_desc1, self.mode_desc2, self.mode_desc3, self.mode_desc4):
+            widget.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color2))
+        for widget in (self.theme1, self.theme2, self.theme3):
+            widget.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color)
+        for widget in (self.achiev1_pad, self.achiev2_pad, self.achiev3_pad, self.achiev4_pad, self.achiev5_pad, self.achiev6_pad, self.achiev7_pad, self.achiev8_pad):
+            widget.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
+        for widget in (self.achiev1_title, self.achiev2_title, self.achiev3_title, self.achiev4_title, self.achiev5_title, self.achiev6_title, self.achiev7_title, self.achiev8_title, self.achiev8_2_title):
+            widget.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color2))
+        for widget in (self.achiev1_ico, self.achiev2_ico, self.achiev3_ico, self.achiev4_ico, self.achiev5_ico, self.achiev6_ico, self.achiev7_ico, self.achiev8_ico):
+            widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.hollow_color, self.hollow_color))
+        for widget in (self.achiev1_desc, self.achiev2_desc, self.achiev3_desc, self.achiev4_desc, self.achiev5_desc, self.achiev6_desc, self.achiev7_desc, self.achiev8_desc):
+            widget.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color1))
+        for widget in (self.mode_title, self.theme_title, self.rules_title, self.rules_rules, self.achievments_title, self.stats_title, self.icon):
+            widget.setStyleSheet('color: %s' % self.text_color1)
+        for widget in (self.stats_pad1, self.stats_pad2, self.stats_pad3, self.stats_pad4):
+            widget.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
+        for widget in (self.stats_mode_title1, self.stats_mode_title2, self.stats_mode_title3, self.stats_mode_title4):
+            widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.pad_color, self.text_color1))
+        for widget in (self.stats_bs1, self.stats_bs2, self.stats_bs3, self.stats_bt1, self.stats_bt2, self.stats_bt3, self.stats_ttm, self.stats_ac):
+            widget.setStyleSheet('background-color: %s; color: %s' % (self.pad_color, self.text_color1))
+        for widget in (self.stats_bs1_val, self.stats_bs2_val, self.stats_bs3_val, self.stats_bt1_val, self.stats_bt2_val, self.stats_bt3_val, self.stats_ttm_val, self.stats_ac_val):
+            widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px; padding: 1px' % (self.text_color1, self.text_color2))
+        for widget in (self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats):
+            widget.setStyleSheet("background-color: rgba(0, 0, 0, 0.0); color: %s" % self.text_color1)
+        for widget in (self.menu_game_h, self.menu_mode_h, self.menu_theme_h, self.menu_achievments_h, self.menu_rules_h, self.menu_stats_h):
+            widget.setStyleSheet("background-color: %s; color: %s; border-radius: 10px; padding: 10px" % (self.hollow_color, self.text_color1))
+        for widget in (self.score_plain, self.best_plain):
+            widget.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color2, self.text_color1))
+        for widget in (self.score_value, self.best_value):
+            widget.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color2, self.text_color2))
+        for widget in (self.new_game_btn_panel, self.change_mode_btn_panel, self.continue_game_btn_panel):
+            widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.tile_color2, self.text_color1))
+        self.menu_pad.setStyleSheet("background-color: %s" % self.pad_color)
+        self.menu_menu.setStyleSheet("background-color: %s; border-radius: 75px" % self.tile_color2)
+        self.menu_txt.setStyleSheet("background-color: %s; color: %s" % (self.tile_color2, self.text_color1))
+        self.menu_rnd.setStyleSheet("background-color: %s; border-radius: 60" % self.tile_color2)
+        self.menu_exit.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color32, self.text_color2))
+        self.menu_tile.setStyleSheet("background-color: %s; border-radius: 10px" % self.tile_color2)
+        self.bg_plain.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color)
+        self.winlose_msg_pad.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color)
+        self.winlose_msg_text.setStyleSheet('background-color: rgba(0, 0, 0, 0.0); color: %s' % self.text_color2)
+        self.achievment_msg_pad.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
+        self.achievment_msg_text.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.pad_color, self.text_color1))
+        self.achievment_msg_tile.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.tile_color2, self.text_color1))
+        settings_panel.clr_change()
+        self.achievments_check()
+        self.set_tiles_style()
 
     def set_tiles_style(self):
         for i in range(self.ysize):
@@ -738,7 +809,7 @@ class MainWindow(QMainWindow):
                             bg_color = self.text_color1
                         self.game_area[i][j][0].setStyleSheet(f'background-color: {bg_color}; color: {text_color}; border-radius: 10')
                         self.game_area[i][j][0].setText(str(self.game_area[i][j][2]))
-                        new_tile_font = self.tile_font
+                        new_tile_font = self.font_40
                         new_tile_font.setPointSize(44 - len(str(self.game_area[i][j][2])) * 4)
                         if new_tile_font.pointSize() < 10:
                             new_tile_font.setPointSize(10)
@@ -758,38 +829,38 @@ class MainWindow(QMainWindow):
         self.mode_pad4 = QWidget(self)
         self.mode_pad4.setGeometry(QRect(1250, 625 - self.desk_h, 580, 280))
         self.mode_mode1 = QLabel("4x4", self)
-        self.mode_mode1.setFont(self.desc_font)
+        self.mode_mode1.setFont(self.font_25)
         self.mode_mode1.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         self.mode_mode1.setGeometry((QRect(650, 480 - self.desk_h, 500, 85)))
         self.mode_mode2 = QLabel("3x3", self)
-        self.mode_mode2.setFont(self.desc_font)
+        self.mode_mode2.setFont(self.font_25)
         self.mode_mode2.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         self.mode_mode2.setGeometry((QRect(1290, 480 - self.desk_h, 500, 85)))
         self.mode_mode3 = QLabel("быстрая игра", self)
-        self.mode_mode3.setFont(self.desc_font)
+        self.mode_mode3.setFont(self.font_25)
         self.mode_mode3.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         self.mode_mode3.setGeometry((QRect(650, 905 - self.desk_h, 500, 85)))
         self.mode_mode4 = QLabel("пользовательский", self)
-        self.mode_mode4.setFont(self.desc_font)
+        self.mode_mode4.setFont(self.font_25)
         self.mode_mode4.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         self.mode_mode4.setGeometry((QRect(1290, 905 - self.desk_h, 500, 85)))
         self.mode_desc1 = QLabel("классический режим игры в 2048 со стандартным полем и правилами", self)
-        self.mode_desc1.setFont(self.desc_font_mini)
+        self.mode_desc1.setFont(self.font_15)
         self.mode_desc1.setWordWrap(True)
         self.mode_desc1.setAlignment(Qt.AlignTop)
         self.mode_desc1.setGeometry((QRect(890, 225 - self.desk_h, 275, 230)))
         self.mode_desc2 = QLabel("проверьте свои способности на уменьшенном поле!", self)
-        self.mode_desc2.setFont(self.desc_font_mini)
+        self.mode_desc2.setFont(self.font_15)
         self.mode_desc2.setWordWrap(True)
         self.mode_desc2.setAlignment(Qt.AlignTop)
         self.mode_desc2.setGeometry((QRect(890, 650 - self.desk_h, 275, 230)))
         self.mode_desc3 = QLabel("стандартное поле 4x4, но время на каждое действие ограничено!", self)
-        self.mode_desc3.setFont(self.desc_font_mini)
+        self.mode_desc3.setFont(self.font_15)
         self.mode_desc3.setWordWrap(True)
         self.mode_desc3.setAlignment(Qt.AlignTop)
         self.mode_desc3.setGeometry((QRect(1535, 225 - self.desk_h, 275, 230)))
         self.mode_desc4 = QLabel("прямоугольное поле? считанные секунды на размышление? в этом режиме можно всё!", self)
-        self.mode_desc4.setFont(self.desc_font_mini)
+        self.mode_desc4.setFont(self.font_15)
         self.mode_desc4.setWordWrap(True)
         self.mode_desc4.setAlignment(Qt.AlignTop)
         self.mode_desc4.setGeometry((QRect(1535, 650 - self.desk_h, 275, 230)))
@@ -850,17 +921,17 @@ class MainWindow(QMainWindow):
         self.theme3_btn.setGeometry(QRect(940, 810 - self.desk_h, 550, 200))
         self.theme3_btn.clicked.connect(lambda: self.clr_change('gray'))
         self.theme1_title = QLabel('классическая', self)
-        self.theme1_title.setFont(self.desc_font)
+        self.theme1_title.setFont(self.font_25)
         self.theme1_title.setStyleSheet('color: #776e65')
         self.theme1_title.setGeometry(QRect(940, 400 - self.desk_h, 550, 60))
         self.theme1_title.setAlignment(Qt.AlignHCenter)
         self.theme2_title = QLabel('холодная', self)
-        self.theme2_title.setFont(self.desc_font)
+        self.theme2_title.setFont(self.font_25)
         self.theme2_title.setStyleSheet('color: #657477')
         self.theme2_title.setGeometry(QRect(940, 710 - self.desk_h, 550, 60))
         self.theme2_title.setAlignment(Qt.AlignHCenter)
         self.theme3_title = QLabel('оттенки серого', self)
-        self.theme3_title.setFont(self.desc_font)
+        self.theme3_title.setFont(self.font_25)
         self.theme3_title.setStyleSheet('color: #464646')
         self.theme3_title.setGeometry(QRect(940, 1020 - self.desk_h, 550, 60))
         self.theme3_title.setAlignment(Qt.AlignHCenter)
@@ -891,123 +962,123 @@ class MainWindow(QMainWindow):
         self.achiev8_pad.setGeometry(QRect(1280, 830 - self.desk_h, 500, 150))
         self.achiev1_title = QLabel('первые шаги', self)
         self.achiev1_title.setAlignment(Qt.AlignTop)
-        self.achiev1_title.setFont(self.achiev_font)
+        self.achiev1_title.setFont(self.font_18)
         self.achiev1_title.setGeometry(QRect(790, 205 - self.desk_h, 345, 70))
         self.achiev2_title = QLabel('первые успехи', self)
         self.achiev2_title.setAlignment(Qt.AlignTop)
-        self.achiev2_title.setFont(self.achiev_font)
+        self.achiev2_title.setFont(self.font_18)
         self.achiev2_title.setGeometry(QRect(790, 415 - self.desk_h, 345, 70))
         self.achiev3_title = QLabel('первая победа', self)
         self.achiev3_title.setAlignment(Qt.AlignTop)
-        self.achiev3_title.setFont(self.achiev_font)
+        self.achiev3_title.setFont(self.font_18)
         self.achiev3_title.setGeometry(QRect(790, 625 - self.desk_h, 345, 70))
         self.achiev4_title = QLabel('сверх нормы', self)
         self.achiev4_title.setAlignment(Qt.AlignTop)
-        self.achiev4_title.setFont(self.achiev_font)
+        self.achiev4_title.setFont(self.font_18)
         self.achiev4_title.setGeometry(QRect(790, 835 - self.desk_h, 345, 70))
         self.achiev5_title = QLabel('это было сложно', self)
         self.achiev5_title.setAlignment(Qt.AlignTop)
-        self.achiev5_title.setFont(self.achiev_font)
+        self.achiev5_title.setFont(self.font_18)
         self.achiev5_title.setGeometry(QRect(1430, 205 - self.desk_h, 345, 70))
         self.achiev6_title = QLabel('это было быстро', self)
         self.achiev6_title.setAlignment(Qt.AlignTop)
-        self.achiev6_title.setFont(self.achiev_font)
+        self.achiev6_title.setFont(self.font_18)
         self.achiev6_title.setGeometry(QRect(1430, 415 - self.desk_h, 345, 70))
         self.achiev7_title = QLabel('мастер плиток', self)
         self.achiev7_title.setAlignment(Qt.AlignTop)
-        self.achiev7_title.setFont(self.achiev_font)
+        self.achiev7_title.setFont(self.font_18)
         self.achiev7_title.setGeometry(QRect(1430, 625 - self.desk_h, 345, 70))
         self.achiev8_2_title = QLabel('миллионером?', self)
         self.achiev8_2_title.setAlignment(Qt.AlignTop)
-        self.achiev8_2_title.setFont(self.achiev_font_mini)
+        self.achiev8_2_title.setFont(self.font_16)
         self.achiev8_2_title.setGeometry(QRect(1430, 862 - self.desk_h, 345, 35))
         self.achiev8_title = QLabel('а кто не хочет стать', self)
         self.achiev8_title.setAlignment(Qt.AlignTop)
-        self.achiev8_title.setFont(self.achiev_font_mini)
+        self.achiev8_title.setFont(self.font_16)
         self.achiev8_title.setGeometry(QRect(1430, 835 - self.desk_h, 345, 35))
         self.achiev1_ico = QLabel('8', self)
-        self.achiev1_ico.setFont(self.tile_font5)
+        self.achiev1_ico.setFont(self.font_30)
         self.achiev1_ico.setGeometry(QRect(650, 210 - self.desk_h, 120, 120))
         self.achiev1_ico.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.achiev2_ico = QLabel('128', self)
-        self.achiev2_ico.setFont(self.tile_font2)
+        self.achiev2_ico.setFont(self.font_25)
         self.achiev2_ico.setGeometry(QRect(650, 420 - self.desk_h, 120, 120))
         self.achiev2_ico.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.achiev3_ico = QLabel('2048', self)
-        self.achiev3_ico.setFont(self.tile_font3)
+        self.achiev3_ico.setFont(self.font_20)
         self.achiev3_ico.setGeometry(QRect(650, 630 - self.desk_h, 120, 120))
         self.achiev3_ico.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.achiev4_ico = QLabel('4096', self)
-        self.achiev4_ico.setFont(self.tile_font3)
+        self.achiev4_ico.setFont(self.font_20)
         self.achiev4_ico.setGeometry(QRect(650, 840 - self.desk_h, 120, 120))
         self.achiev4_ico.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.achiev5_ico = QLabel('512', self)
-        self.achiev5_ico.setFont(self.tile_font2)
+        self.achiev5_ico.setFont(self.font_25)
         self.achiev5_ico.setGeometry(QRect(1290, 210 - self.desk_h, 120, 120))
         self.achiev5_ico.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.achiev6_ico = QLabel('2048', self)
-        self.achiev6_ico.setFont(self.tile_font3)
+        self.achiev6_ico.setFont(self.font_20)
         self.achiev6_ico.setGeometry(QRect(1290, 420 - self.desk_h, 120, 120))
         self.achiev6_ico.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.achiev7_ico = QLabel('100 000', self)
-        self.achiev7_ico.setFont(self.tile_font3)
+        self.achiev7_ico.setFont(self.font_20)
         self.achiev7_ico.setGeometry(QRect(1290, 630 - self.desk_h, 120, 120))
         self.achiev7_ico.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.achiev7_ico.setWordWrap(True)
         self.achiev8_ico = QLabel('1000 000', self)
-        self.achiev8_ico.setFont(self.tile_font4)
+        self.achiev8_ico.setFont(self.font_18)
         self.achiev8_ico.setGeometry(QRect(1290, 840 - self.desk_h, 120, 120))
         self.achiev8_ico.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.achiev8_ico.setWordWrap(True)
         self.achiev1_desc = QLabel('соберите плитку номиналом 8 в режиме “4x4”', self)
         self.achiev1_desc.setWordWrap(True)
-        self.achiev1_desc.setFont(self.achiev_desc_font)
+        self.achiev1_desc.setFont(self.font_10)
         self.achiev1_desc.setGeometry(QRect(790, 250 - self.desk_h, 320, 90))
         self.achiev1_desc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.achiev2_desc = QLabel('соберите плитку номиналом 128 в режиме “4x4”', self)
         self.achiev2_desc.setWordWrap(True)
-        self.achiev2_desc.setFont(self.achiev_desc_font)
+        self.achiev2_desc.setFont(self.font_10)
         self.achiev2_desc.setGeometry(QRect(790, 460 - self.desk_h, 320, 90))
         self.achiev2_desc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.achiev3_desc = QLabel('соберите плитку номиналом 2048 в режиме “4x4”', self)
         self.achiev3_desc.setWordWrap(True)
-        self.achiev3_desc.setFont(self.achiev_desc_font)
+        self.achiev3_desc.setFont(self.font_10)
         self.achiev3_desc.setGeometry(QRect(790, 670 - self.desk_h, 320, 90))
         self.achiev3_desc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.achiev4_desc = QLabel('соберите плитку номиналом 4096 в режиме “4x4”', self)
         self.achiev4_desc.setWordWrap(True)
-        self.achiev4_desc.setFont(self.achiev_desc_font)
+        self.achiev4_desc.setFont(self.font_10)
         self.achiev4_desc.setGeometry(QRect(790, 880 - self.desk_h, 320, 90))
         self.achiev4_desc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.achiev5_desc = QLabel('соберите плитку номиналом 512 в режиме “3x3”', self)
         self.achiev5_desc.setWordWrap(True)
-        self.achiev5_desc.setFont(self.achiev_desc_font)
+        self.achiev5_desc.setFont(self.font_10)
         self.achiev5_desc.setGeometry(QRect(1430, 250 - self.desk_h, 320, 90))
         self.achiev5_desc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.achiev6_desc = QLabel('соберите плитку номиналом 2048 в режиме “быстрая игра”', self)
         self.achiev6_desc.setWordWrap(True)
-        self.achiev6_desc.setFont(self.achiev_desc_font)
+        self.achiev6_desc.setFont(self.font_10)
         self.achiev6_desc.setGeometry(QRect(1430, 460 - self.desk_h, 320, 90))
         self.achiev6_desc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.achiev7_desc = QLabel('сложите суммарно 100 000 плиток в режимах “4x4”, “3x3” и “быстрая игра”', self)
         self.achiev7_desc.setWordWrap(True)
-        self.achiev7_desc.setFont(self.achiev_desc_font)
+        self.achiev7_desc.setFont(self.font_10)
         self.achiev7_desc.setGeometry(QRect(1430, 670 - self.desk_h, 320, 90))
         self.achiev7_desc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.achiev8_desc = QLabel('достигните счёта 1 000 000 в режиме “4x4” или “быстрая игра”', self)
         self.achiev8_desc.setWordWrap(True)
-        self.achiev8_desc.setFont(self.achiev_desc_font)
+        self.achiev8_desc.setFont(self.font_10)
         self.achiev8_desc.setGeometry(QRect(1430, 900 - self.desk_h, 320, 70))
         self.achiev8_desc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.achievment_msg_pad = QWidget(self)
         self.achievment_msg_pad.setGeometry(QRect(1360, self.desk_h + 150, 500, 150))
         self.achievment_msg_text = QLabel('получено новое достижение',self)
         self.achievment_msg_text.setWordWrap(True)
-        self.achievment_msg_text.setFont(self.tile_font4)
+        self.achievment_msg_text.setFont(self.font_18)
         self.achievment_msg_text.setGeometry(QRect(1520, self.desk_h + 175, 330, 100))
         self.achievment_msg_tile = QLabel('!', self)
         self.achievment_msg_tile.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
-        self.achievment_msg_tile.setFont(self.tile_font)
+        self.achievment_msg_tile.setFont(self.font_40)
         self.achievment_msg_tile.setGeometry(QRect(1385, self.desk_h + 175, 100, 100))
         self.achievment_msg = [self.achievment_msg_pad, self.achievment_msg_text, self.achievment_msg_tile]
         self.achievments_dict = {
@@ -1043,7 +1114,7 @@ class MainWindow(QMainWindow):
         """, self)
         self.rules_rules.setGeometry(QRect(515, 150 - self.desk_h, 1400, 940))
         self.rules_rules.setWordWrap(True)
-        self.rules_rules.setFont(self.tile_font3)
+        self.rules_rules.setFont(self.font_20)
         self.rules_widgets = (self.rules_title, self.rules_rules)
 
     def stats_window_init(self):
@@ -1060,83 +1131,83 @@ class MainWindow(QMainWindow):
         self.stats_pad4 = QWidget(self)
         self.stats_pad4.setGeometry(QRect(1220, 570 - self.desk_h, 650, 350))
         self.stats_mode_title1 = QLabel('4x4', self)
-        self.stats_mode_title1.setFont(self.icon_font_mini)
+        self.stats_mode_title1.setFont(self.font_35)
         self.stats_mode_title1.setAlignment(Qt.AlignHCenter)
         self.stats_mode_title1.setGeometry(QRect(550, 200 - self.desk_h, 650, 100))
         self.stats_mode_title2 = QLabel('3x3', self)
-        self.stats_mode_title2.setFont(self.icon_font_mini)
+        self.stats_mode_title2.setFont(self.font_35)
         self.stats_mode_title2.setAlignment(Qt.AlignHCenter)
         self.stats_mode_title2.setGeometry(QRect(550, 570 - self.desk_h, 650, 100))
         self.stats_mode_title3 = QLabel('быстрая игра', self)
-        self.stats_mode_title3.setFont(self.icon_font_mini)
+        self.stats_mode_title3.setFont(self.font_35)
         self.stats_mode_title3.setAlignment(Qt.AlignHCenter)
         self.stats_mode_title3.setGeometry(QRect(1220, 200 - self.desk_h, 650, 100))
         self.stats_mode_title4 = QLabel('общее', self)
-        self.stats_mode_title4.setFont(self.icon_font_mini)
+        self.stats_mode_title4.setFont(self.font_35)
         self.stats_mode_title4.setAlignment(Qt.AlignHCenter)
         self.stats_mode_title4.setGeometry(QRect(1220, 570 - self.desk_h, 650, 100))
         self.stats_bs1 = QLabel('лучший счёт:', self)
-        self.stats_bs1.setFont(self.tile_font3)
+        self.stats_bs1.setFont(self.font_20)
         self.stats_bs1.setAlignment(Qt.AlignVCenter)
         self.stats_bs1.setGeometry(QRect(575, 300 - self.desk_h, 330, 80))
         self.stats_bs2 = QLabel('лучший счёт:', self)
-        self.stats_bs2.setFont(self.tile_font3)
+        self.stats_bs2.setFont(self.font_20)
         self.stats_bs2.setAlignment(Qt.AlignVCenter)
         self.stats_bs2.setGeometry(QRect(575, 675 - self.desk_h, 330, 80))
         self.stats_bs3 = QLabel('лучший счёт:', self)
-        self.stats_bs3.setFont(self.tile_font3)
+        self.stats_bs3.setFont(self.font_20)
         self.stats_bs3.setAlignment(Qt.AlignVCenter)
         self.stats_bs3.setGeometry(QRect(1250, 300 - self.desk_h, 330, 80))
         self.stats_bt1 = QLabel('лучшая плитка:', self)
-        self.stats_bt1.setFont(self.tile_font3)
+        self.stats_bt1.setFont(self.font_20)
         self.stats_bt1.setAlignment(Qt.AlignVCenter)
         self.stats_bt1.setGeometry(QRect(575, 425 - self.desk_h, 330, 80))
         self.stats_bt2 = QLabel('лучшая плитка:', self)
-        self.stats_bt2.setFont(self.tile_font3)
+        self.stats_bt2.setFont(self.font_20)
         self.stats_bt2.setAlignment(Qt.AlignVCenter)
         self.stats_bt2.setGeometry(QRect(575, 800 - self.desk_h, 330, 80))
         self.stats_bt3 = QLabel('лучшая плитка:', self)
-        self.stats_bt3.setFont(self.tile_font3)
+        self.stats_bt3.setFont(self.font_20)
         self.stats_bt3.setAlignment(Qt.AlignVCenter)
         self.stats_bt3.setGeometry(QRect(1250, 425 - self.desk_h, 330, 80))
         self.stats_ttm = QLabel('сложено плиток:', self)
-        self.stats_ttm.setFont(self.tile_font3)
+        self.stats_ttm.setFont(self.font_20)
         self.stats_ttm.setAlignment(Qt.AlignVCenter)
         self.stats_ttm.setGeometry(QRect(1250, 675 - self.desk_h, 360, 80))
         self.stats_ac = QLabel('получено достижений:', self)
-        self.stats_ac.setFont(self.tile_font3)
+        self.stats_ac.setFont(self.font_20)
         self.stats_ac.setAlignment(Qt.AlignVCenter)
         self.stats_ac.setGeometry(QRect(1250, 800 - self.desk_h, 480, 80))
         self.stats_bs1_val = QLabel(str(self.best_scores_lst[0]), self)
-        self.stats_bs1_val.setFont(self.tile_font3)
+        self.stats_bs1_val.setFont(self.font_20)
         self.stats_bs1_val.setAlignment(Qt.AlignVCenter)
         self.stats_bs1_val.setGeometry(QRect(875, 300 - self.desk_h, 300, 80))
         self.stats_bs2_val = QLabel(str(self.best_scores_lst[1]), self)
-        self.stats_bs2_val.setFont(self.tile_font3)
+        self.stats_bs2_val.setFont(self.font_20)
         self.stats_bs2_val.setAlignment(Qt.AlignVCenter)
         self.stats_bs2_val.setGeometry(QRect(875, 675 - self.desk_h, 300, 80))
         self.stats_bs3_val = QLabel(str(self.best_scores_lst[2]), self)
-        self.stats_bs3_val.setFont(self.tile_font3)
+        self.stats_bs3_val.setFont(self.font_20)
         self.stats_bs3_val.setAlignment(Qt.AlignVCenter)
         self.stats_bs3_val.setGeometry(QRect(1550, 300 - self.desk_h, 300, 80))
         self.stats_bt1_val = QLabel(str(self.best_tiles_lst[0]), self)
-        self.stats_bt1_val.setFont(self.tile_font3)
+        self.stats_bt1_val.setFont(self.font_20)
         self.stats_bt1_val.setAlignment(Qt.AlignVCenter)
         self.stats_bt1_val.setGeometry(QRect(925, 425 - self.desk_h, 250, 80))
         self.stats_bt2_val = QLabel(str(self.best_tiles_lst[1]), self)
-        self.stats_bt2_val.setFont(self.tile_font3)
+        self.stats_bt2_val.setFont(self.font_20)
         self.stats_bt2_val.setAlignment(Qt.AlignVCenter)
         self.stats_bt2_val.setGeometry(QRect(925, 800 - self.desk_h, 250, 80))
         self.stats_bt3_val = QLabel(str(self.best_tiles_lst[2]), self)
-        self.stats_bt3_val.setFont(self.tile_font3)
+        self.stats_bt3_val.setFont(self.font_20)
         self.stats_bt3_val.setAlignment(Qt.AlignVCenter)
         self.stats_bt3_val.setGeometry(QRect(1600, 425 - self.desk_h, 250, 80))
         self.stats_ttm_val = QLabel(str(self.merge_cnt), self)
-        self.stats_ttm_val.setFont(self.tile_font3)
+        self.stats_ttm_val.setFont(self.font_20)
         self.stats_ttm_val.setAlignment(Qt.AlignVCenter)
         self.stats_ttm_val.setGeometry(QRect(1620, 675 - self.desk_h, 230, 80))
         self.stats_ac_val = QLabel(str(self.achievments_cnt), self)
-        self.stats_ac_val.setFont(self.tile_font3)
+        self.stats_ac_val.setFont(self.font_20)
         self.stats_ac_val.setAlignment(Qt.AlignVCenter)
         self.stats_ac_val.setGeometry(QRect(1740, 800 - self.desk_h, 110, 80))
         self.stats_widgets = (self.stats_title, self.stats_pad1, self.stats_pad2, self.stats_pad3, self.stats_pad4,
@@ -1159,7 +1230,7 @@ class MainWindow(QMainWindow):
         self.menu_rnd.setGeometry(10, 40, 120, 120)
         self.menu_btn = QPushButton(self)
         self.menu_btn.setGeometry(-450, 25, 600, 150)
-        self.menu_btn.clicked.connect(self.move_menu)
+        self.menu_btn.clicked.connect(self.menu_btn_action)
         self.menu_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
         self.menu_game_h = QWidget(self)
         self.menu_mode_h = QWidget(self)
@@ -1181,14 +1252,14 @@ class MainWindow(QMainWindow):
         self.menu_achievments.clicked.connect(lambda: self.window_change(3))
         self.menu_rules.clicked.connect(lambda: self.window_change(4))
         self.menu_stats.clicked.connect(lambda: self.window_change(5))
-        self.menu_exit.clicked.connect(self.close)
-        self.menu_game.setFont(self.menu_font)
-        self.menu_mode.setFont(self.menu_font)
-        self.menu_theme.setFont(self.menu_font)
-        self.menu_achievments.setFont(self.menu_font)
-        self.menu_rules.setFont(self.menu_font)
-        self.menu_stats.setFont(self.menu_font)
-        self.menu_exit.setFont(self.menu_font)
+        self.menu_exit.clicked.connect(self.close_app)
+        self.menu_game.setFont(self.font_30)
+        self.menu_mode.setFont(self.font_30)
+        self.menu_theme.setFont(self.font_30)
+        self.menu_achievments.setFont(self.font_30)
+        self.menu_rules.setFont(self.font_30)
+        self.menu_stats.setFont(self.font_30)
+        self.menu_exit.setFont(self.font_30)
         self.menu_game.setGeometry(-475, 200, 450, 100)
         self.menu_mode.setGeometry(-475, 325, 450, 100)
         self.menu_theme.setGeometry(-475, 450, 450, 100)
@@ -1208,8 +1279,13 @@ class MainWindow(QMainWindow):
                             self.menu_game_h, self.menu_mode_h, self.menu_theme_h, self.menu_achievments_h, self.menu_rules_h, self.menu_stats_h,
                             self.menu_exit, self.menu_tile)
         
+    def menu_btn_action(self):
+        if not self.isTimerEnable or self.isGameEnded:
+            self.move_menu()
+
     def new_mode_start(self, mode: int):
         if self.isWindowAnimEnd:
+            settings_panel.check_input()
             self.game_window_del()
             self.choose_mode(mode)
             self.game_window_init_new()
@@ -1344,118 +1420,119 @@ class MainWindow(QMainWindow):
         return 'end'
     
     def move_tiles(self, direction: str):
-        if direction == 'left':
-            for i in range(self.ysize):
-                for j in range(1, self.xsize):
-                    new_pos = j - 1
-                    if self.game_area[i][j][0] == None:
-                        continue
-                    while new_pos != -1 and self.game_area[i][new_pos][0] == None:
-                        new_pos -= 1
-                    if new_pos == -1 or self.game_area[i][new_pos][2] != self.game_area[i][j][2]:
-                        new_pos += 1
-                        self.game_area[i][new_pos] = self.game_area[i][j]
-                        if new_pos != j:
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
-                    else:
-                        if self.game_area[i][new_pos][1] == None:
-                            self.game_area[i][new_pos][1] = self.game_area[i][j][0]
-                            self.game_area[i][new_pos][2] *= 2
-                            self.score += self.game_area[i][new_pos][2]
-                            self.merge_cnt += 1
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
-                        else:
+        match direction:
+            case 'left':
+                for i in range(self.ysize):
+                    for j in range(1, self.xsize):
+                        new_pos = j - 1
+                        if self.game_area[i][j][0] == None:
+                            continue
+                        while new_pos != -1 and self.game_area[i][new_pos][0] == None:
+                            new_pos -= 1
+                        if new_pos == -1 or self.game_area[i][new_pos][2] != self.game_area[i][j][2]:
                             new_pos += 1
                             self.game_area[i][new_pos] = self.game_area[i][j]
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
-
-        if direction == 'right':
-            for i in range(self.ysize):
-                for j in range(self.xsize - 2, -1, -1):
-                    new_pos = j + 1
-                    if self.game_area[i][j][0] == None:
-                        continue
-                    while new_pos != self.xsize and self.game_area[i][new_pos][0] == None:
-                        new_pos += 1
-                    if new_pos == self.xsize or self.game_area[i][new_pos][2] != self.game_area[i][j][2]:
-                        new_pos -= 1
-                        self.game_area[i][new_pos] = self.game_area[i][j]
-                        if new_pos != j:
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
-                    else:
-                        if self.game_area[i][new_pos][1] == None:
-                            self.game_area[i][new_pos][1] = self.game_area[i][j][0]
-                            self.game_area[i][new_pos][2] *= 2
-                            self.score += self.game_area[i][new_pos][2]
-                            self.merge_cnt += 1
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
+                            if new_pos != j:
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
                         else:
+                            if self.game_area[i][new_pos][1] == None:
+                                self.game_area[i][new_pos][1] = self.game_area[i][j][0]
+                                self.game_area[i][new_pos][2] *= 2
+                                self.score += self.game_area[i][new_pos][2]
+                                if self.curmode != 3:
+                                    self.merge_cnt += 1
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
+                            else:
+                                new_pos += 1
+                                self.game_area[i][new_pos] = self.game_area[i][j]
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
+            case 'right':
+                for i in range(self.ysize):
+                    for j in range(self.xsize - 2, -1, -1):
+                        new_pos = j + 1
+                        if self.game_area[i][j][0] == None:
+                            continue
+                        while new_pos != self.xsize and self.game_area[i][new_pos][0] == None:
+                            new_pos += 1
+                        if new_pos == self.xsize or self.game_area[i][new_pos][2] != self.game_area[i][j][2]:
                             new_pos -= 1
                             self.game_area[i][new_pos] = self.game_area[i][j]
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
-
-        if direction == 'up':
-            for j in range(self.xsize):
-                for i in range(1, self.ysize):
-                    new_pos = i - 1
-                    if self.game_area[i][j][0] == None:
-                        continue
-                    while new_pos != -1 and self.game_area[new_pos][j][0] == None:
-                        new_pos -= 1
-                    if new_pos == -1 or self.game_area[new_pos][j][2] != self.game_area[i][j][2]:
-                        new_pos += 1
-                        self.game_area[new_pos][j] = self.game_area[i][j]
-                        if new_pos != i:
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
-                    else:
-                        if self.game_area[new_pos][j][1] == None:
-                            self.game_area[new_pos][j][1] = self.game_area[i][j][0]
-                            self.game_area[new_pos][j][2] *= 2
-                            self.score += self.game_area[new_pos][j][2]
-                            self.merge_cnt += 1
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
+                            if new_pos != j:
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
                         else:
+                            if self.game_area[i][new_pos][1] == None:
+                                self.game_area[i][new_pos][1] = self.game_area[i][j][0]
+                                self.game_area[i][new_pos][2] *= 2
+                                self.score += self.game_area[i][new_pos][2]
+                                if self.curmode != 3:
+                                    self.merge_cnt += 1
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
+                            else:
+                                new_pos -= 1
+                                self.game_area[i][new_pos] = self.game_area[i][j]
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
+            case 'up':
+                for j in range(self.xsize):
+                    for i in range(1, self.ysize):
+                        new_pos = i - 1
+                        if self.game_area[i][j][0] == None:
+                            continue
+                        while new_pos != -1 and self.game_area[new_pos][j][0] == None:
+                            new_pos -= 1
+                        if new_pos == -1 or self.game_area[new_pos][j][2] != self.game_area[i][j][2]:
                             new_pos += 1
                             self.game_area[new_pos][j] = self.game_area[i][j]
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
-
-        if direction == 'down':
-            for j in range(self.xsize):
-                for i in range(self.ysize - 2, -1, -1):
-                    new_pos = i + 1
-                    if self.game_area[i][j][0] == None:
-                        continue
-                    while new_pos != self.ysize and self.game_area[new_pos][j][0] == None:
-                        new_pos += 1
-                    if new_pos == self.ysize or self.game_area[new_pos][j][2] != self.game_area[i][j][2]:
-                        new_pos -= 1
-                        self.game_area[new_pos][j] = self.game_area[i][j]
-                        if new_pos != i:
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
-                    else:
-                        if self.game_area[new_pos][j][1] == None:
-                            self.game_area[new_pos][j][1] = self.game_area[i][j][0]
-                            self.game_area[new_pos][j][2] *= 2
-                            self.score += self.game_area[new_pos][j][2]
-                            self.merge_cnt += 1
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
+                            if new_pos != i:
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
                         else:
+                            if self.game_area[new_pos][j][1] == None:
+                                self.game_area[new_pos][j][1] = self.game_area[i][j][0]
+                                self.game_area[new_pos][j][2] *= 2
+                                self.score += self.game_area[new_pos][j][2]
+                                if self.curmode != 3:
+                                    self.merge_cnt += 1
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
+                            else:
+                                new_pos += 1
+                                self.game_area[new_pos][j] = self.game_area[i][j]
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
+            case 'down':
+                for j in range(self.xsize):
+                    for i in range(self.ysize - 2, -1, -1):
+                        new_pos = i + 1
+                        if self.game_area[i][j][0] == None:
+                            continue
+                        while new_pos != self.ysize and self.game_area[new_pos][j][0] == None:
+                            new_pos += 1
+                        if new_pos == self.ysize or self.game_area[new_pos][j][2] != self.game_area[i][j][2]:
                             new_pos -= 1
                             self.game_area[new_pos][j] = self.game_area[i][j]
-                            self.game_area[i][j] = [None, None, 2]
-                            self.changes = True
-
+                            if new_pos != i:
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
+                        else:
+                            if self.game_area[new_pos][j][1] == None:
+                                self.game_area[new_pos][j][1] = self.game_area[i][j][0]
+                                self.game_area[new_pos][j][2] *= 2
+                                self.score += self.game_area[new_pos][j][2]
+                                if self.curmode != 3:
+                                    self.merge_cnt += 1
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
+                            else:
+                                new_pos -= 1
+                                self.game_area[new_pos][j] = self.game_area[i][j]
+                                self.game_area[i][j] = [None, None, 2]
+                                self.changes = True
         for i in range(self.ysize):
             for j in range(self.xsize):
                 if self.game_area[i][j][0] != None:
@@ -1472,10 +1549,9 @@ class MainWindow(QMainWindow):
                         self.pos_anim.addAnimation(tile_anim)
         self.pos_anim.start()
     
-    def add_tile(self, amount_of_tiles: int):
-        for _ in range(amount_of_tiles):
+    def add_tiles(self, amount_of_tiles: int, start=False, tiles=[]):
+        for k in range(amount_of_tiles):
             self.isMovingAble = False
-            self.moving_timer.start()
             sec_break = False
             for i in range(self.ysize):
                 if sec_break:
@@ -1483,18 +1559,22 @@ class MainWindow(QMainWindow):
                 for j in range(self.xsize):
                     if not self.tiles_lst[i][j][1]:
                         self.tiles_lst[i][j][1] = True
-                        r, c = random.randint(0, self.ysize - 1), random.randint(0, self.xsize - 1)
-                        while self.game_area[r][c][0] != None:
+                        if not start:
                             r, c = random.randint(0, self.ysize - 1), random.randint(0, self.xsize - 1)
-                        if random.randint(1, 100) <= self.chance:
-                            self.game_area[r][c][2] = self.new_tile_nomin2
+                            while self.game_area[r][c][0] != None:
+                                r, c = random.randint(0, self.ysize - 1), random.randint(0, self.xsize - 1)
+                            if random.randint(1, 100) <= self.chance:
+                                self.game_area[r][c][2] = self.new_tile_nomin2
+                            else:
+                                self.game_area[r][c][2] = self.new_tile_nomin1
                         else:
-                            self.game_area[r][c][2] = self.new_tile_nomin1
+                            r, c = tiles[k][0], tiles[k][1]
+                            self.game_area[r][c][2] = tiles[k][2]
                         self.game_area[r][c][0] = self.tiles_lst[i][j][0]
                         self.game_area[r][c][0].setVisible(True)
                         self.game_area[r][c][0].setText(str(self.game_area[r][c][2]))
                         self.game_area[r][c][0].setGeometry(QRect(self.game_area_pos[r][c][0], self.game_area_pos[r][c][1], 0, 0))
-                        new_tile_font = self.tile_font
+                        new_tile_font = self.font_40
                         new_tile_font.setPointSize(44 - len(str(self.game_area[r][c][2])) * 4)
                         if new_tile_font.pointSize() < 7:
                                 new_tile_font.setPointSize(10)
@@ -1512,10 +1592,11 @@ class MainWindow(QMainWindow):
                             bg_color = self.color_dict[self.game_area[r][c][2]]
                         else:
                             bg_color = self.text_color1
-                        self.game_area[r][c][0].setStyleSheet(f'background-color: {bg_color}; color: {text_color}; border-radius: 10')
+                        self.game_area[r][c][0].setStyleSheet('background-color: %s; color: %s; border-radius: 10' % (bg_color, text_color))
                         self.size_anim.addAnimation(size_anim)
                         sec_break = True
                         break
+                self.move_timer.start()
                 self.size_anim.start()
 
     def game_window_del(self):
@@ -1540,6 +1621,7 @@ class MainWindow(QMainWindow):
                 widget.show()
 
     def game_window_init_new(self):
+        self.score = 0
         self.game_window_init()
         self.opacity.setOpacity(0)
         self.windows[0] = self.game_widgets
@@ -1576,10 +1658,9 @@ class MainWindow(QMainWindow):
             self.new_game_timer.setInterval(400)
         else:
             self.new_game_timer.stop()
-            self.add_tile(2)
+            self.add_tiles(2)
 
     def game_window_init(self):
-        self.score = 0
         self.isMovingAble = True
         self.game_area_pos = [[[] for j in range(self.xsize)] for i in range(self.ysize)]
         self.game_area = [[[None, None, 2] for j in range(self.xsize)] for i in range(self.ysize)]
@@ -1604,19 +1685,19 @@ class MainWindow(QMainWindow):
         self.bg_plain.setGeometry(round(self.desk_w - 162.5 * self.xsize) // 2, round(self.desk_h - 162.5 * self.ysize) // 2, round(162.5 * self.xsize), round(162.5 * self.ysize))
         self.score_plain = QLabel("счёт", self)
         self.score_plain.setGeometry((self.desk_w - 650) // 2 + 300, round(self.desk_h - 162.5 * self.ysize) // 2 - 100, 150, 75)
-        self.score_plain.setFont(self.score_plain_font)
+        self.score_plain.setFont(self.font_14)
         self.score_plain.setAlignment(Qt.AlignHCenter)
         self.score_value = QLabel(str(self.score), self)
         self.score_value.setGeometry((self.desk_w - 650) // 2 + 300, round(self.desk_h - 162.5 * self.ysize) // 2 - 67, 150, 30)
-        self.score_value.setFont(self.score_plain_font)
+        self.score_value.setFont(self.font_14)
         self.score_value.setAlignment(Qt.AlignHCenter)
         self.best_plain = QLabel("лучший", self)
         self.best_plain.setGeometry((self.desk_w - 650) // 2 + 490, round(self.desk_h - 162.5 * self.ysize) // 2 - 100, 150, 75)
-        self.best_plain.setFont(self.score_plain_font)
+        self.best_plain.setFont(self.font_14)
         self.best_plain.setAlignment(Qt.AlignHCenter)
         self.best_value = QLabel(str(self.best_scores_lst[self.curmode]), self)
         self.best_value.setGeometry((self.desk_w - 650) // 2 + 490, round(self.desk_h - 162.5 * self.ysize) // 2 - 67, 150, 30)
-        self.best_value.setFont(self.score_plain_font)
+        self.best_value.setFont(self.font_14)
         self.best_value.setAlignment(Qt.AlignHCenter)
         self.icon = QLabel(self)
         self.icon.setText("2048")
@@ -1647,15 +1728,15 @@ class MainWindow(QMainWindow):
         self.new_game_btn_panel = QLabel('начать\nновую игру', self)
         self.new_game_btn_panel.setGeometry(QRect(670, 730, 0, 0))
         self.new_game_btn_panel.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
-        self.new_game_btn_panel.setFont(self.achiev_font_mini)
+        self.new_game_btn_panel.setFont(self.font_16)
         self.change_mode_btn_panel = QLabel('сменить\nрежим', self)
         self.change_mode_btn_panel.setGeometry(QRect(980, 730, 0, 0))
         self.change_mode_btn_panel.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
-        self.change_mode_btn_panel.setFont(self.achiev_font_mini)
+        self.change_mode_btn_panel.setFont(self.font_16)
         self.continue_game_btn_panel = QLabel('продолжить\nтекущую игру', self)
         self.continue_game_btn_panel.setGeometry(QRect(980, 730, 0, 0))
         self.continue_game_btn_panel.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
-        self.continue_game_btn_panel.setFont(self.achiev_font_mini)
+        self.continue_game_btn_panel.setFont(self.font_16)
         self.new_game_btn = QPushButton(self)
         self.new_game_btn.clicked.connect(self.new_game_btn_action)
         self.new_game_btn.setGeometry(QRect(670, 730, 0, 0))
@@ -1669,9 +1750,9 @@ class MainWindow(QMainWindow):
         self.continue_game_btn.setGeometry(QRect(980, 730, 0, 0))
         self.continue_game_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
         self.winlose_msg_text = QLabel(self)
-        self.font_50.setPointSize(12 * max(self.ysize, self.xsize))
+        self.font_var.setPointSize(12 * max(self.ysize, self.xsize))
         self.winlose_msg_text.setGeometry(QRect(round(1920 - 162.5 * self.xsize) // 2, 400 - 25 * self.ysize, round(162.5 * self.xsize), 310))
-        self.winlose_msg_text.setFont(self.font_50)
+        self.winlose_msg_text.setFont(self.font_var)
         self.winlose_msg_text.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         if self.isTimerEnable:
             self.timer_tile = Timer()
@@ -1679,7 +1760,7 @@ class MainWindow(QMainWindow):
         else:
             self.timer_tile = QWidget(self)
             self.timer_tile.resize(0, 0)
-        self.isGameStoped = False
+        self.isGameEnded = False
         self.game_widgets = [self.tiles_lst, self.hollows_lst, self.bg_plain, self.best_plain, self.score_plain, self.icon, self.score_value, self.best_value, 
                              self.winlose_msg_pad, self.new_game_btn, self.change_mode_btn, self.continue_game_btn,
                              self.new_game_btn_panel, self.change_mode_btn_panel, self.continue_game_btn_panel, self.winlose_msg_text,
@@ -1689,7 +1770,7 @@ class MainWindow(QMainWindow):
         self.game_window_del()
         self.game_window_init_new()
         self.game_window_show()
-        self.isGameStoped = False
+        self.isGameEnded = False
         self.isWinner = False
 
     def change_mode_btn_action(self):
@@ -1704,7 +1785,7 @@ class MainWindow(QMainWindow):
     def change_mode_timer_action(self):
         self.change_mode_timer.stop()
         self.window_change(1)
-        self.isGameStoped = False
+        self.isGameEnded = False
 
     def continue_game_btn_action(self):
         self.opacity.setOpacity(0)
@@ -1713,18 +1794,18 @@ class MainWindow(QMainWindow):
         self.new_game_btn_panel.setGeometry(QRect(self.new_game_btn.geometry()))
         self.continue_game_btn_panel.setGeometry(QRect(self.continue_game_btn.geometry()))
         self.winlose_msg_text.setText('')
-        self.isGameStoped = False
+        self.isGameEnded = False
         if self.isTimerEnable:
             self.timer_tile.start()
 
     def enable_moving(self):
-        self.moving_timer.stop()
+        self.move_timer.stop()
         self.isMovingAble = True
 
     def after_action(self):
         self.timer_times += 1
         if self.timer_times == 2:
-            self.add_tile(1)
+            self.add_tiles(1)
             self.action_timer.setInterval(100)
         elif self.timer_times == 3:
             self.action_timer.stop()
@@ -1753,7 +1834,7 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, e):
         self.changes = False
-        if self.isMovingAble and not self.isMenuActive and not self.isGameStoped and self.curwin == 0 and self.menu_btn.isEnabled():
+        if self.isMovingAble and not self.isMenuActive and not self.isGameEnded and self.curwin == 0 and self.menu_btn.isEnabled():
             self.pos_anim = QParallelAnimationGroup()
             self.size_anim = QParallelAnimationGroup()
             if e.key() == Qt.Key_D or e.key() == Qt.Key_Right or e.key() == 1042:
@@ -1775,6 +1856,10 @@ class MainWindow(QMainWindow):
                     self.timer_tile.restart()
                 self.action_timer.start()
 
+    def close_app(self):
+        self.write_save_file()
+        self.close()
+save_path = 'save.sav'
 app = QApplication(sys.argv)
 main_window = MainWindow()
 main_window.showMaximized()
@@ -1785,5 +1870,8 @@ for btn in (
     [main_window.new_game_btn, main_window.continue_game_btn, main_window.change_mode_btn, main_window.mode_btn1, main_window.mode_btn2, main_window.mode_btn3, main_window.mode_btn3, main_window.mode_btn4, main_window.theme1_btn, main_window.theme2_btn, main_window.theme3_btn, main_window.menu_exit, main_window.menu_btn]
 ): btn.setFocusPolicy(Qt.NoFocus)
 main_window.clr_change(main_window.clrtheme)
-main_window.add_tile(2)
+if not main_window.isSaveExists:
+    main_window.add_tiles(2)
+else:
+    main_window.add_tiles(main_window.game_area_config.pop(-1), True, main_window.game_area_config)
 sys.exit(app.exec_())
