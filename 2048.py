@@ -8,57 +8,64 @@ import pandas
 import os.path
 import pyreadstat
 
-class Timer(QWidget):
-    def __init__(self):
+class Timer(QLabel):
+    def __init__(self, startx, starty):
         super().__init__()
+        self.move_timer_times = 0
+        self.color_timer_times = 0
+        self.startx = startx
+        self.starty = starty
+        self.__uiElementsInit()
+
+    def __uiElementsInit(self):
         self.move_timer = QTimer()
         self.move_timer.setInterval(1000)
-        self.move_timer.timeout.connect(self.move_tile)
+        self.move_timer.timeout.connect(self.__moveTile)
         self.color_timer = QTimer()
         self.color_timer.setInterval(350)
-        self.color_timer.timeout.connect(self.change_tile_color)
-        self.timer_tile = QLabel(self)
-        self.timer_tile.setGeometry(0, 0, 150, 0)
-        self.tile_font = self.timer_tile.font()
+        self.color_timer.timeout.connect(self.__tileColorChange)
+        self.tile_font = self.font()
         self.tile_font.setPointSize(40)
         self.tile_font.setBold(True)
-        self.timer_tile.setFont(self.tile_font)
-        self.timer_tile.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
+        self.setGeometry(self.startx, self.starty, 150, 0)
+        self.setFont(self.tile_font)
+        self.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
 
-    def change_tile_color(self):
+    def __tileColorChange(self):
         self.color_timer_times += 1
         self.color_timer.stop()
-        self.timer_tile.setText(str(self.interval - self.color_timer_times))
+        self.setText(str(self.interval - self.color_timer_times))
         if self.color_timer_times >= self.interval // 3:
-            self.timer_tile.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.second_clr, self.txt_clr))
+            self.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.second_clr, self.txt_clr))
         if self.color_timer_times >= self.interval // 3 * 2:
-            self.timer_tile.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.third_clr, self.txt_clr))
+            self.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.third_clr, self.txt_clr))
 
-    def move_tile(self):
+    def __moveTile(self):
         self.move_timer.setInterval(1000)
         self.move_timer_times += 1
         if self.move_timer_times == self.interval:
             self.stop()
-            main_window.show_winend_msg('end')
+            main_window.winEndMsgShow('end')
             return
-        pos_anim = QPropertyAnimation(self.timer_tile, b'pos', self)
+        pos_anim = QPropertyAnimation(self, b'pos', self)
         pos_anim.setDuration(500)
         pos_anim.setEasingCurve(QEasingCurve.InOutCubic)
-        pos_anim.setEndValue(QPoint(self.timer_tile.x(), self.timer_tile.y() + self.shifty))
+        pos_anim.setEndValue(QPoint(self.x(), self.y() + self.shifty))
         pos_anim.start()
         self.color_timer.start()
 
     def start(self):
-        self.timer_tile.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.first_clr, self.txt_clr))
+        self.move(self.startx, self.starty)
+        self.colorChange()
+        self.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.first_clr, self.txt_clr))
         self.xsize = main_window.xsize
         self.ysize = main_window.ysize
         self.interval = main_window.timer_interval
         self.shifty = round(162.5 * (self.ysize - 1)) // (self.interval - 1)
-        self.timer_tile.setText(str(self.interval))
+        self.setText(str(self.interval))
         self.move_timer_times = 0
         self.color_timer_times = 0
         self.move_timer.start()
-        self.appear()
 
     def stop(self):
         self.move_timer.stop()
@@ -70,31 +77,31 @@ class Timer(QWidget):
         self.color_timer.stop()
         self.move_timer_times = 0
         self.color_timer_times = 0
-        self.timer_tile.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.first_clr, self.txt_clr))
-        self.timer_tile.setText(str(self.interval))
-        anim = QPropertyAnimation(self.timer_tile, b'pos', self)
+        self.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.first_clr, self.txt_clr))
+        self.setText(str(self.interval))
+        anim = QPropertyAnimation(self, b'pos', self)
         anim.setDuration(200)
         anim.setEasingCurve(QEasingCurve.InOutCubic)
-        anim.setEndValue(QPoint(0, 0))
+        anim.setEndValue(QPoint(self.startx, self.starty))
         anim.start()
         self.move_timer.setInterval(200)
         self.move_timer.start()
 
     def disappear(self):
-        anim = QPropertyAnimation(self.timer_tile, b'geometry', self)
+        anim = QPropertyAnimation(self, b'geometry', self)
         anim.setDuration(200)
         anim.setEasingCurve(QEasingCurve.InOutCubic)
-        anim.setEndValue(QRect(self.timer_tile.geometry().adjusted(0, 150, 0, -150)))
+        anim.setEndValue(QRect(self.geometry().adjusted(0, 150, 0, -150)))
         anim.start()
 
     def appear(self):
-        anim = QPropertyAnimation(self.timer_tile, b'geometry', self)
+        anim = QPropertyAnimation(self, b'geometry', self)
         anim.setDuration(200)
         anim.setEasingCurve(QEasingCurve.InOutCubic)
-        anim.setEndValue(QRect(self.timer_tile.geometry().adjusted(0, 0, 0, 150)))
+        anim.setEndValue(QRect(self.geometry().adjusted(0, 0, 0, 150)))
         anim.start()
 
-    def clr_change(self):
+    def colorChange(self):
         self.txt_clr = main_window.text_color2
         self.first_clr = main_window.tile_color8
         self.second_clr = main_window.tile_color16
@@ -103,15 +110,17 @@ class Timer(QWidget):
 class SettingsPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.focusNextPrevChild(True)
-        self.move_timer = QTimer()
-        self.move_timer.setInterval(400)
-        self.move_timer.timeout.connect(self.move_with_window_step2)
         self.isOnScreen = False
         self.isAnimEnded = True
         self.isTimerEnable = True
+        self.__uiElementsInit()
+        
+    def __uiElementsInit(self):
+        self.focusNextPrevChild(True)
+        self.line_buffer = None
         self.pad = QWidget(self)
         self.pad.setGeometry(QRect(610, 200, 1220, 705))
+        self.pad.setMouseTracking(True)
         self.title = QLabel('параметры новой игры', self)
         self.title.setFont(main_window.font_35)
         self.title.setGeometry(QRect(610, 210, 1220, 100))
@@ -144,41 +153,47 @@ class SettingsPanel(QWidget):
         self.line_nom1.setMaxLength(4)
         self.line_nom1.setFont(main_window.font_25)
         self.line_nom1.setGeometry(QRect(690, 425, 210, 75))
+        self.line_nom1.editingFinished.connect(lambda: self.checkInput(self.line_nom1))
         self.line_nom2 = QLineEdit('4', self)
         self.line_nom2.setMaxLength(4)
         self.line_nom2.setFont(main_window.font_25)
         self.line_nom2.setGeometry(QRect(690, 530, 210, 75))
+        self.line_nom2.editingFinished.connect(lambda: self.checkInput(self.line_nom2))
         self.line_chance1 = QLineEdit('90', self)
         self.line_chance1.setMaxLength(2)
         self.line_chance1.setFont(main_window.font_25)
         self.line_chance1.setGeometry(QRect(990, 425, 210, 75))
+        self.line_chance1.editingFinished.connect(lambda: self.checkInput(self.line_chance1))
         self.line_chance2 = QLineEdit('10', self)
         self.line_chance2.setMaxLength(2)
         self.line_chance2.setFont(main_window.font_25)
         self.line_chance2.setGeometry(QRect(990, 530, 210, 75))
+        self.line_chance2.editingFinished.connect(lambda: self.checkInput(self.line_chance2))
         self.line_winnomin = QLineEdit('2048', self)
         self.line_winnomin.setMaxLength(6)
         self.line_winnomin.setFont(main_window.font_25)
         self.line_winnomin.setGeometry(QRect(880, 662, 320, 75))
+        self.line_winnomin.editingFinished.connect(lambda: self.checkInput(self.line_winnomin))
         self.line_interval = QLineEdit('3', self)
         self.line_interval.setMaxLength(2)
         self.line_interval.setFont(main_window.font_25)
         self.line_interval.setGeometry(QRect(1550, 530, 210, 75))
+        self.line_interval.editingFinished.connect(lambda: self.checkInput(self.line_interval))
         self.line_ysize = QLineEdit('4', self)
         self.line_ysize.setMaxLength(1)
         self.line_ysize.setFont(main_window.font_25)
         self.line_ysize.setGeometry(QRect(1630, 662, 130, 75))
+        self.line_ysize.editingFinished.connect(lambda: self.checkInput(self.line_ysize))
         self.line_xsize = QLineEdit('4', self)
         self.line_xsize.setMaxLength(1)
         self.line_xsize.setFont(main_window.font_25)
         self.line_xsize.setGeometry(QRect(1630, 792, 130, 75))
+        self.line_xsize.editingFinished.connect(lambda: self.checkInput(self.line_xsize))
         validator = QRegExpValidator(QRegExp(r'[0-9]+'))
-        for line in (self.line_nom1, self.line_nom2, self.line_chance1, self.line_chance2, self.line_interval, self.line_winnomin, self.line_xsize, self.line_ysize):
-            line.setValidator(validator)
         self.start_btn = QPushButton('начать', self)
         self.start_btn.setFont(main_window.font_25)
         self.start_btn.setGeometry(QRect(670, 780, 250, 100))
-        self.start_btn.clicked.connect(lambda: main_window.new_mode_start(3))
+        self.start_btn.clicked.connect(lambda: main_window.newModeStart(3))
         self.back_btn = QPushButton('назад',self)
         self.back_btn.setFont(main_window.font_25)
         self.back_btn.setGeometry(QRect(970, 780, 250, 100))
@@ -188,26 +203,34 @@ class SettingsPanel(QWidget):
         self.timer_on.setGeometry(QRect(1300, 425, 210, 80))
         self.timer_off = QWidget(self)
         self.timer_off.setGeometry(QRect(1550, 425, 210, 80))
+        opacity = QGraphicsOpacityEffect(self)
+        opacity.setOpacity(0.2)
+        self.btn_hover = QWidget(self)
+        self.btn_hover.setGraphicsEffect(opacity)
+        self.btn_hover.hide()
         self.timer_state_tile = QWidget(self)
         self.timer_state_tile.setGeometry(QRect(1300, 425, 210, 80))
         self.timer_on_btn = QPushButton('включен', self)
         self.timer_on_btn.setFont(main_window.font_18)
         self.timer_on_btn.setGeometry(QRect(1300, 425, 210, 80))
-        self.timer_on_btn.clicked.connect(lambda: self.timer_state_shange(True))
+        self.timer_on_btn.clicked.connect(lambda: self.__timerStateChange(True))
+        self.timer_on_btn.installEventFilter(self)
         self.timer_off_btn = QPushButton('выключен', self)
         self.timer_off_btn.setFont(main_window.font_18)
         self.timer_off_btn.setGeometry(QRect(1550, 425, 210, 80))
-        self.timer_off_btn.clicked.connect(lambda: self.timer_state_shange(False))
+        self.timer_off_btn.clicked.connect(lambda: self.__timerStateChange(False))
+        self.timer_off_btn.installEventFilter(self)
         [widget.move(QPoint(widget.x() - 1920, widget.y())) for widget in self.findChildren(QWidget)]
         self.lines_tpl = (self.line_nom1, self.line_nom2, self.line_chance1, self.line_chance2, self.line_interval, self.line_winnomin, self.line_xsize, self.line_ysize)
-        for btn in self.lines_tpl:
-            btn.setFocusPolicy(Qt.ClickFocus)
+        for line in self.lines_tpl:
+            line.setValidator(validator)
+            line.setFocusPolicy(Qt.ClickFocus)
 
-    def timer_state_shange(self, timerState):
+    def __timerStateChange(self, timerState: bool):
         if timerState:
-            endValue = QPoint(1300, self.timer_state_tile.y())
+            endValue = QPoint(self.timer_on.x(), self.timer_state_tile.y())
         else:
-            endValue = QPoint(1550, self.timer_state_tile.y())
+            endValue = QPoint(self.timer_off.x(), self.timer_state_tile.y())
         anim = QPropertyAnimation(self.timer_state_tile, b'pos', self)
         anim.setDuration(200)
         anim.setEasingCurve(QEasingCurve.OutCubic)
@@ -215,14 +238,9 @@ class SettingsPanel(QWidget):
         anim.start()
         self.isTimerEnable = timerState
 
-    
-    def event(self, event):
-        if event.type() == QEvent.KeyPress and event.key() in (Qt.Key_Enter, Qt.Key_Return):
-                self.check_input()
-        return super().event(event)
-    
-    def check_input(self):
-        for line in self.lines_tpl:
+    def checkInput(self, line: QLineEdit):
+        self.line_buffer = line
+        if line in self.lines_tpl:
             num = int(line.text())
             match line:
                 case self.line_interval:
@@ -235,25 +253,19 @@ class SettingsPanel(QWidget):
                         line.setText('3')
                     elif num > 6:
                         line.setText('6')
-                case self.line_chance1 | self.line_chance2:
-                    if num < 0:
-                        line.setText('0')
-                    elif num > 100:
-                        line.setText('100')
-                    num = int(line.text())
-                    if line == self.line_chance1:
-                        self.line_chance2.setText(str(100 - num))
-                    else:
-                        self.line_chance1.setText(str(100 - num))
+                case self.line_chance1:
+                    self.line_chance2.setText(str(100 - int(line.text())))
+                case self.line_chance2:
+                    self.line_chance1.setText(str(100 - int(line.text())))
                 case self.line_nom1 | self.line_nom2:
                     if num < 2:
                         line.setText('2')
                     elif num > 4096:
                         line.setText('4096')
                     else:
-                        line.setText(self.power_of_two(num))
+                        line.setText(str(self.__powerOfTwo(num)))
                     num = int(line.text())
-                    if num > int(self.line_winnomin.text()):
+                    if num >= int(self.line_winnomin.text()):
                         self.line_winnomin.setText(str(pow(2, int(math.log(num, 2) + 1))))
                 case self.line_winnomin:
                     if num < 4:
@@ -261,18 +273,17 @@ class SettingsPanel(QWidget):
                     elif num > 131072:
                         line.setText('131072')
                     else:
-                        line.setText(self.power_of_two(num))
+                        line.setText(str(self.__powerOfTwo(num)))
                     num = int(line.text())
-                    if num < int(self.line_nom1.text()):
+                    if num <= int(self.line_nom1.text()):
                         self.line_nom1.setText(str(pow(2, int(math.log(num, 2) - 1))))
-                    if num < int(self.line_nom2.text()):
+                    if num <= int(self.line_nom2.text()):
                         self.line_nom2.setText(str(pow(2, int(math.log(num, 2) - 1))))
-        self.setFocus()
                 
-    def power_of_two(self, num) -> str:
-        return (str(pow(2, round(math.log(num, 2)))))
+    def __powerOfTwo(self, num) -> int:
+        return pow(2, round(math.log(num, 2)))
 
-    def clr_change(self):
+    def colorChange(self):
         self.pad.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.pad_color)
         self.title.setStyleSheet('background-color: %s; color: %s' % (main_window.pad_color, main_window.text_color1))
         for widget in (self.pad_mini1, self.pad_mini2, self.pad_mini3, self.pad_mini4, self.pad_mini4_2, self.pad_mini5, self.pad_mini6):
@@ -287,7 +298,7 @@ class SettingsPanel(QWidget):
         self.timer_off_btn.setStyleSheet('background-color: transparent; color: %s; border-radius: 10px' % main_window.text_color1)
         self.timer_state_tile.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.tile_color2)
 
-    def move_with_menu(self):
+    def moveWithMenu(self):
         if main_window.curwin == 1:
             if main_window.isMenuActive:
                 shiftx = -175
@@ -302,7 +313,7 @@ class SettingsPanel(QWidget):
                 anim_group.addAnimation(anim)
             anim_group.start()
 
-    def move_with_window_step1(self):
+    def moveWithWin1(self):
         if self.isOnScreen and (main_window.newwin == 1 or main_window.curwin == 1):
             anim_group = QParallelAnimationGroup(self)
             for widget in self.findChildren(QWidget):
@@ -311,12 +322,11 @@ class SettingsPanel(QWidget):
                 anim.setDuration(400)
                 anim.setEndValue(QPoint(widget.x(), widget.y() + 1920))
                 anim_group.addAnimation(anim)
-            anim_group.start()
             if main_window.curwin == 1:
-                self.move_timer.start()
+                anim_group.finished.connect(self.__moveWithWin2)
+            anim_group.start()
             
-    def move_with_window_step2(self):
-        self.move_timer.stop()
+    def __moveWithWin2(self):
         anim_group = QParallelAnimationGroup(self)
         for widget in self.findChildren(QWidget):
             anim = QPropertyAnimation(widget, b'pos')
@@ -329,6 +339,10 @@ class SettingsPanel(QWidget):
     def move(self):
         if self.isAnimEnded:
             self.isAnimEnded = False
+            self.start_btn.setEnabled(False)
+            self.back_btn.setEnabled(False)
+            self.timer_on_btn.setEnabled(False)
+            self.timer_off_btn.setEnabled(False)
             if self.isOnScreen:
                 shiftx = -1920
             else:
@@ -352,22 +366,96 @@ class SettingsPanel(QWidget):
 
     def setAnimEnded(self):
         self.isAnimEnded = True
+        self.start_btn.setEnabled(True)
+        self.back_btn.setEnabled(True)
+        self.timer_on_btn.setEnabled(True)
+        self.timer_off_btn.setEnabled(True)
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Enter:
+            self.btn_hover.show()
+            self.btn_hover.setGeometry(watched.geometry())
+            return True
+        elif event.type() == QEvent.Leave:
+            self.btn_hover.hide()
+            return True
+        return super().eventFilter(watched, event)
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.centralWidget = QWidget()
-        self.setCentralWidget(self.centralWidget)
-        self.grid = QGridLayout(self.centralWidget)
         self.curwin = 0
         self.newwin = 0
         self.timer_times = 0
-        self.isWindowAnimEnd = True
+        self.curmode = 0
+        self.ysize = 0
+        self.xsize = 0
+        self.winnomin = 0
+        self.new_tile_nomin1 = 0
+        self.new_tile_nomin2 = 0
+        self.chance = 0
+        self.score = 0
+        self.timer_interval = 0
+        self.best_scores_lst = [0, 0, 0, 0]
+        self.best_tiles_lst = [0, 0, 0, 0]
+        self.merge_cnt = 0
+        self.achiev_cnt = 0
+        self.desk_w = 1920
+        self.desk_h = 1200
+        self.clrtheme = 'classic'
+        self.save_path = 'save.sav'
+        self.isSaveExists = False
+        self.isTimerEnable = False
+        self.isGameEnded = False
+        self.isWinner = False
+        self.isWinAnimEnded = True
         self.isMenuActive = False
-        self.changes = False
+        self.wereTilesChanged = False
         self.isFirstGameInit = True
+        self.__uiElementsInit()
+        self.__achievWinInit()
+        self.__readSaveFile()
+        self.chooseMode(self.curmode)
+        self.__menuInit()
+        self.__gameWinInit()
+        self.__modeWinInit()
+        self.__themeWinInit()
+        self.__rulesWinInit()
+        self.__statsWinInit()
+        self.windows = [self.game_widgets, self.mode_widgets, self.theme_widgets, self.achievments_widgets, self.rules_widgets, self.stats_widgets]
+    
+    def __uiElementsInit(self):
+        self.setWindowTitle('2048')
+        self.setWindowFlag(Qt.FramelessWindowHint)
+        self.centralWidget = QWidget()
+        self.setCentralWidget(self.centralWidget)
+        self.grid = QGridLayout(self.centralWidget)
         self.opacity = QGraphicsOpacityEffect()
         self.opacity.setOpacity(0)
+        self.move_timer = QTimer()
+        self.move_timer.setInterval(100)
+        self.move_timer.timeout.connect(self.__enableMoving)
+        self.action_timer = QTimer()
+        self.action_timer.setInterval(100)
+        self.action_timer.timeout.connect(self.__afterAction)
+        self.menu_timer = QTimer()
+        self.menu_timer.setInterval(300)
+        self.menu_timer.timeout.connect(self.__enableMenuMoving)
+        self.window_timer = QTimer()
+        self.window_timer.setInterval(600)
+        self.window_timer.timeout.connect(self.__moveWindow)
+        self.msg_timer = QTimer()
+        self.msg_timer.setInterval(3000)
+        self.msg_timer.timeout.connect(self.__newAchievMsgShow)
+        self.new_game_timer = QTimer()
+        self.new_game_timer.setInterval(600)
+        self.new_game_timer.timeout.connect(self.__newGameTiles)
+        self.change_mode_timer = QTimer()
+        self.change_mode_timer.setInterval(600)
+        self.change_mode_timer.timeout.connect(self.__changeModeTimerAct)
+        self.game_init_timer = QTimer()
+        self.game_init_timer.setInterval(800)
+        self.game_init_timer.timeout.connect(self.__firstGameInitEnd)
         fonts_parent = QLabel()
         parent_font = fonts_parent.font()
         parent_font.setBold(True)
@@ -397,51 +485,11 @@ class MainWindow(QMainWindow):
         self.font_14.setPointSize(14)
         self.font_10 = fonts_parent.font()
         self.font_10.setPointSize(10)
-        self.move_timer = QTimer()
-        self.move_timer.setInterval(100)
-        self.move_timer.timeout.connect(self.enable_moving)
-        self.action_timer = QTimer()
-        self.action_timer.setInterval(100)
-        self.action_timer.timeout.connect(self.after_action)
-        self.menu_timer = QTimer()
-        self.menu_timer.setInterval(300)
-        self.menu_timer.timeout.connect(self.enable_menu_moving)
-        self.window_timer = QTimer()
-        self.window_timer.setInterval(600)
-        self.window_timer.timeout.connect(self.move_window)
-        self.msg_timer = QTimer()
-        self.msg_timer.setInterval(3000)
-        self.msg_timer.timeout.connect(self.show_new_achievment_msg)
-        self.new_game_timer = QTimer()
-        self.new_game_timer.setInterval(600)
-        self.new_game_timer.timeout.connect(self.new_game_tiles)
-        self.change_mode_timer = QTimer()
-        self.change_mode_timer.setInterval(600)
-        self.change_mode_timer.timeout.connect(self.change_mode_timer_action)
-        self.game_init_timer = QTimer()
-        self.game_init_timer.setInterval(800)
-        self.game_init_timer.timeout.connect(self.first_game_init_end)
-        self.setWindowTitle('2048')
-        self.setWindowFlag(Qt.FramelessWindowHint)
-        self.desk_w = 1920
-        self.desk_h = 1200
-        
-        self.achievments_window_init()
-        self.read_save_file()
-        self.choose_mode(self.curmode)
-        self.menu_init()
-        self.game_window_init()
-        self.mode_window_init()
-        self.theme_window_init()
-        self.rules_window_init()
-        self.stats_window_init()
-        self.windows = [self.game_widgets, self.mode_widgets, self.theme_widgets, self.achievments_widgets, self.rules_widgets, self.stats_widgets]
-        self.windows_btns = [self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats]
-    
-    def read_save_file(self):
-        if os.path.exists(save_path):
+
+    def __readSaveFile(self):
+        if os.path.exists(self.save_path):
             self.isSaveExists = True
-            df = pandas.read_spss(save_path)
+            df = pandas.read_spss(self.save_path)
             self.df_val = df['value']
             self.clrtheme = str(self.df_val[0])
             self.curmode = int(self.df_val[1])
@@ -465,7 +513,7 @@ class MainWindow(QMainWindow):
             self.best_scores_lst = best_scores_lst 
             self.best_tiles_lst = best_tiles_lst
             achievments_state = self.df_val[14].split()
-            self.achievments_cnt = int(achievments_state[8])
+            self.achiev_cnt = int(achievments_state[8])
             i = 0
             for key in self.achievments_dict.keys():
                 self.achievments_dict[key] = bool(int(achievments_state[i]))
@@ -478,28 +526,8 @@ class MainWindow(QMainWindow):
                     newel[j] = int(newel[j])
                 game_area_config[i] = newel
             self.game_area_config = game_area_config
-            
-        else:
-            self.isSaveExists = False
-            self.curmode = 0
-            self.ysize = 0
-            self.xsize = 0
-            self.winnomin = 0
-            self.new_tile_nomin1 = 0
-            self.new_tile_nomin2 = 0
-            self.chance = 0
-            self.score = 0
-            self.isTimerEnable = False
-            self.timer_interval = 0
-            self.best_scores_lst = [0, 0, 0, 0]
-            self.best_tiles_lst = [0, 0, 0, 0]
-            self.merge_cnt = 0
-            self.clrtheme = 'classic'
-            self.achievments_cnt = 0
-            self.isGameEnded = False
-            self.isWinner = False
 
-    def write_save_file(self):
+    def __writeSaveFile(self):
         cnt = 0
         game_area_config = ''
         achievments_state = ''
@@ -517,7 +545,7 @@ class MainWindow(QMainWindow):
                 achievments_state += '1' + ' '
             else:
                 achievments_state += '0' + ' '
-        achievments_state += str(self.achievments_cnt)
+        achievments_state += str(self.achiev_cnt)
         for i in range(4):
             best_scores += str(self.best_scores_lst[i])
             best_tiles += str(self.best_tiles_lst[i])
@@ -536,12 +564,12 @@ class MainWindow(QMainWindow):
                    best_scores, best_tiles, achievments_state, game_area_config]
         data = {'value': var_lst}
         df = pandas.DataFrame(data=data)
-        pyreadstat.write_sav(df, save_path)
+        pyreadstat.write_sav(df, self.save_path)
 
-    def first_game_init_end(self):
+    def __firstGameInitEnd(self):
         self.isFirstGameInit = False
 
-    def choose_mode(self, mode: int):
+    def chooseMode(self, mode: int):
         self.curmode = mode
         match mode:
             case 0:
@@ -571,7 +599,9 @@ class MainWindow(QMainWindow):
                 self.isTimerEnable = True
             case 3:
                 if not self.isFirstGameInit:
-                    settings_panel.check_input()
+                    settings_panel.setFocus()
+                    if not settings_panel.line_buffer == 0:
+                        settings_panel.checkInput(settings_panel.line_buffer)
                     self.ysize = int(settings_panel.line_ysize.text())
                     self.xsize = int(settings_panel.line_xsize.text())
                     self.winnomin = int(settings_panel.line_winnomin.text())
@@ -581,7 +611,7 @@ class MainWindow(QMainWindow):
                     self.timer_interval = int(settings_panel.line_interval.text())
                     self.isTimerEnable = settings_panel.isTimerEnable
             
-    def achievments_check(self):
+    def __achievCheck(self):
         cnt = 0
         for i in range(self.ysize):
             for j in range(self.xsize):
@@ -589,40 +619,40 @@ class MainWindow(QMainWindow):
                     case 0:
                         if self.game_area[i][j][2] == 8 and not self.achievments_dict[self.achiev1_ico]:
                             self.achievments_dict[self.achiev1_ico] = True
-                            self.achievments_cnt += 1
-                            self.show_new_achievment_msg()
+                            self.achiev_cnt += 1
+                            self.__newAchievMsgShow()
                         if self.game_area[i][j][2] == 128 and not self.achievments_dict[self.achiev2_ico]:
                             self.achievments_dict[self.achiev2_ico] = True
-                            self.achievments_cnt += 1
-                            self.show_new_achievment_msg()
+                            self.achiev_cnt += 1
+                            self.__newAchievMsgShow()
                         if self.game_area[i][j][2] == 2048 and not self.achievments_dict[self.achiev3_ico]:
                             self.achievments_dict[self.achiev3_ico] = True
-                            self.achievments_cnt += 1
-                            self.show_new_achievment_msg()
+                            self.achiev_cnt += 1
+                            self.__newAchievMsgShow()
                         if self.game_area[i][j][2] == 4096 and not self.achievments_dict[self.achiev4_ico]:
                             self.achievments_dict[self.achiev4_ico] = True
-                            self.achievments_cnt += 1
-                            self.show_new_achievment_msg()
+                            self.achiev_cnt += 1
+                            self.__newAchievMsgShow()
                     case 1:
                         if self.game_area[i][j][2] == 512 and not self.achievments_dict[self.achiev5_ico]:
                             self.achievments_dict[self.achiev5_ico] = True
-                            self.achievments_cnt += 1
-                            self.show_new_achievment_msg()
+                            self.achiev_cnt += 1
+                            self.__newAchievMsgShow()
                     case 2:
                         if self.game_area[i][j][2] == 2048 and not self.achievments_dict[self.achiev6_ico]:
                             self.achievments_dict[self.achiev6_ico] = True
-                            self.achievments_cnt += 1
-                            self.show_new_achievment_msg()
+                            self.achiev_cnt += 1
+                            self.__newAchievMsgShow()
                     case 3:
                         return
         if self.merge_cnt == 100000 and not self.achievments_dict[self.achiev7_ico]:
             self.achievments_dict[self.achiev7_ico] = True
-            self.achievments_cnt += 1
-            self.show_new_achievment_msg()
+            self.achiev_cnt += 1
+            self.__newAchievMsgShow()
         if self.score == 1000000 and not self.achievments_dict[self.achiev8_ico]:
             self.achievments_dict[self.achiev8_ico] = True
-            self.achievments_cnt += 1
-            self.show_new_achievment_msg()
+            self.achiev_cnt += 1
+            self.__newAchievMsgShow()
         for key, value in self.achievments_dict.items():
             cnt += 1
             if value:
@@ -632,7 +662,7 @@ class MainWindow(QMainWindow):
                     colors = (self.text_color1, self.tile_color2)
                 key.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % colors)
     
-    def show_new_achievment_msg(self):
+    def __newAchievMsgShow(self):
         msg_anim_group = QParallelAnimationGroup(self)
         if self.msg_timer.isActive():
             self.msg_timer.stop()
@@ -648,7 +678,7 @@ class MainWindow(QMainWindow):
                 msg_anim_group.addAnimation(anim)
         msg_anim_group.start()
 
-    def show_winend_msg(self, state: str):
+    def winEndMsgShow(self, state: str):
         match state:
             case 'win':
                 if self.isWinner and not self.isFirstGameInit:
@@ -665,6 +695,7 @@ class MainWindow(QMainWindow):
                 btn2 = self.change_mode_btn
                 btn1_panel = self.new_game_btn_panel
                 btn2_panel = self.change_mode_btn_panel
+                self.isWinner = False
                 text = 'ИГРА\nЗАКОНЧЕНА'
             case 'continue':
                 return
@@ -692,7 +723,7 @@ class MainWindow(QMainWindow):
         size_anim_group.addAnimation(size_anim)
         size_anim_group.start()
 
-    def stats_update(self):
+    def __statsUpdate(self):
         self.stats_bs1_val.setText(str(self.best_scores_lst[0]))
         self.stats_bs2_val.setText(str(self.best_scores_lst[1]))
         self.stats_bs3_val.setText(str(self.best_scores_lst[2]))
@@ -700,9 +731,9 @@ class MainWindow(QMainWindow):
         self.stats_bt2_val.setText(str(self.best_tiles_lst[1]))
         self.stats_bt3_val.setText(str(self.best_tiles_lst[2]))
         self.stats_ttm_val.setText(str(self.merge_cnt))
-        self.stats_ac_val.setText(str(self.achievments_cnt))
+        self.stats_ac_val.setText(str(self.achiev_cnt))
 
-    def clr_change(self, clrtheme: str):
+    def colorChange(self, clrtheme: str):
         self.clrtheme = clrtheme
         match clrtheme:
             case 'classic':
@@ -839,13 +870,13 @@ class MainWindow(QMainWindow):
         self.achievment_msg_pad.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
         self.achievment_msg_text.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.pad_color, self.text_color1))
         self.achievment_msg_tile.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.tile_color2, self.text_color1))
-        settings_panel.clr_change()
+        settings_panel.colorChange()
         if self.isTimerEnable:
-            self.timer.clr_change()
-        self.achievments_check()
-        self.set_tiles_style()
+            self.timer.colorChange()
+        self.__achievCheck()
+        self.__setTilesStyle()
 
-    def set_tiles_style(self):
+    def __setTilesStyle(self):
         for i in range(self.ysize):
             for j in range(self.xsize):
                 self.hollows_lst[i][j][0].setStyleSheet("background-color: %s; border-radius: 10px" % self.hollow_color)
@@ -866,7 +897,7 @@ class MainWindow(QMainWindow):
                             new_tile_font.setPointSize(10)
                         self.game_area[i][j][0].setFont(new_tile_font)
         
-    def mode_window_init(self):
+    def __modeWinInit(self):
         self.mode_title = QLabel("выбор режима игры", self)
         self.mode_title.setFont(self.font_50)
         self.mode_title.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
@@ -900,12 +931,12 @@ class MainWindow(QMainWindow):
         self.mode_desc1.setWordWrap(True)
         self.mode_desc1.setAlignment(Qt.AlignTop)
         self.mode_desc1.setGeometry((QRect(890, 225 - self.desk_h, 275, 230)))
-        self.mode_desc2 = QLabel("проверьте свои способности на уменьшенном поле!", self)
+        self.mode_desc2 = QLabel("стандартное поле 4x4, но время на каждое действие ограничено!", self)
         self.mode_desc2.setFont(self.font_15)
         self.mode_desc2.setWordWrap(True)
         self.mode_desc2.setAlignment(Qt.AlignTop)
         self.mode_desc2.setGeometry((QRect(890, 650 - self.desk_h, 275, 230)))
-        self.mode_desc3 = QLabel("стандартное поле 4x4, но время на каждое действие ограничено!", self)
+        self.mode_desc3 = QLabel("проверьте свои способности на уменьшенном поле!", self)
         self.mode_desc3.setFont(self.font_15)
         self.mode_desc3.setWordWrap(True)
         self.mode_desc3.setAlignment(Qt.AlignTop)
@@ -929,16 +960,16 @@ class MainWindow(QMainWindow):
         self.mode_img4.setStyleSheet('border-radius: 10px')
         self.mode_btn1 = QPushButton(self)
         self.mode_btn1.setGeometry(QRect(610, 200 - self.desk_h, 580, 280))
-        self.mode_btn1.clicked.connect(lambda: self.new_mode_start(0))
+        self.mode_btn1.clicked.connect(lambda: self.newModeStart(0))
         self.mode_btn1.setStyleSheet('background-color: transparent')
         self.mode_btn2 = QPushButton(self)
         self.mode_btn2.setGeometry(QRect(1250, 200 - self.desk_h, 580, 280))
         self.mode_btn2.setStyleSheet('background-color: transparent')
-        self.mode_btn2.clicked.connect(lambda: self.new_mode_start(1))
+        self.mode_btn2.clicked.connect(lambda: self.newModeStart(1))
         self.mode_btn3 = QPushButton(self)
         self.mode_btn3.setGeometry(QRect(610, 625 - self.desk_h, 580, 280))
         self.mode_btn3.setStyleSheet('background-color: transparent')
-        self.mode_btn3.clicked.connect(lambda: self.new_mode_start(2))
+        self.mode_btn3.clicked.connect(lambda: self.newModeStart(2))
         self.mode_btn4 = QPushButton(self)
         self.mode_btn4.setGeometry(QRect(1250, 625 - self.desk_h, 580, 280))
         self.mode_btn4.setStyleSheet('background-color: transparent')
@@ -948,7 +979,7 @@ class MainWindow(QMainWindow):
                              self.mode_img1, self.mode_img2, self.mode_img3, self.mode_img4,
                              self.mode_btn1, self.mode_btn2, self.mode_btn3, self.mode_btn4]
 
-    def theme_window_init(self):
+    def __themeWinInit(self):
         self.theme_title = QLabel("выбор цветовой темы", self)
         self.theme_title.setFont(self.font_50)
         self.theme_title.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
@@ -962,15 +993,15 @@ class MainWindow(QMainWindow):
         self.theme1_btn = QPushButton(self)
         self.theme1_btn.setStyleSheet("background-color: transparent")
         self.theme1_btn.setGeometry(QRect(940, 190 - self.desk_h, 550, 200))
-        self.theme1_btn.clicked.connect(lambda: self.clr_change('classic'))
+        self.theme1_btn.clicked.connect(lambda: self.colorChange('classic'))
         self.theme2_btn = QPushButton(self)
         self.theme2_btn.setStyleSheet("background-color: transparent")
         self.theme2_btn.setGeometry(QRect(940, 500 - self.desk_h, 550, 200))
-        self.theme2_btn.clicked.connect(lambda: self.clr_change('cold'))
+        self.theme2_btn.clicked.connect(lambda: self.colorChange('cold'))
         self.theme3_btn = QPushButton(self)
         self.theme3_btn.setStyleSheet("background-color: transparent")
         self.theme3_btn.setGeometry(QRect(940, 810 - self.desk_h, 550, 200))
-        self.theme3_btn.clicked.connect(lambda: self.clr_change('gray'))
+        self.theme3_btn.clicked.connect(lambda: self.colorChange('gray'))
         self.theme1_title = QLabel('классическая', self)
         self.theme1_title.setFont(self.font_25)
         self.theme1_title.setStyleSheet('color: #776e65')
@@ -990,7 +1021,7 @@ class MainWindow(QMainWindow):
                               self.theme1_title, self.theme2_title, self.theme3_title,
                               self.theme1_btn, self.theme2_btn, self.theme3_btn)
 
-    def achievments_window_init(self):
+    def __achievWinInit(self):
         self.achievments_title = QLabel("достижения", self)
         self.achievments_title.setFont(self.font_50)
         self.achievments_title.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
@@ -1147,7 +1178,7 @@ class MainWindow(QMainWindow):
                                     self.achiev1_ico, self.achiev2_ico, self.achiev3_ico, self.achiev4_ico, self.achiev5_ico, self.achiev6_ico, self.achiev7_ico, self.achiev8_ico,
                                     self.achiev1_desc, self.achiev2_desc, self.achiev3_desc, self.achiev4_desc, self.achiev5_desc, self.achiev6_desc, self.achiev7_desc, self.achiev8_desc)
     
-    def rules_window_init(self):
+    def __rulesWinInit(self):
         self.rules_title = QLabel('правила', self)
         self.rules_title.setFont(self.font_50)
         self.rules_title.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
@@ -1168,7 +1199,7 @@ class MainWindow(QMainWindow):
         self.rules_rules.setFont(self.font_20)
         self.rules_widgets = (self.rules_title, self.rules_rules)
 
-    def stats_window_init(self):
+    def __statsWinInit(self):
         self.stats_title = QLabel('статистика', self)
         self.stats_title.setFont(self.font_50)
         self.stats_title.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
@@ -1257,7 +1288,7 @@ class MainWindow(QMainWindow):
         self.stats_ttm_val.setFont(self.font_20)
         self.stats_ttm_val.setAlignment(Qt.AlignVCenter)
         self.stats_ttm_val.setGeometry(QRect(1620, 675 - self.desk_h, 230, 80))
-        self.stats_ac_val = QLabel(str(self.achievments_cnt), self)
+        self.stats_ac_val = QLabel(str(self.achiev_cnt), self)
         self.stats_ac_val.setFont(self.font_20)
         self.stats_ac_val.setAlignment(Qt.AlignVCenter)
         self.stats_ac_val.setGeometry(QRect(1740, 800 - self.desk_h, 110, 80))
@@ -1268,7 +1299,7 @@ class MainWindow(QMainWindow):
                               self.stats_bs1_val, self.stats_bs2_val, self.stats_bs3_val, self.stats_ttm_val, 
                               self.stats_bt1_val, self.stats_bt2_val, self.stats_bt3_val, self.stats_ac_val)
         
-    def menu_init(self):
+    def __menuInit(self):
         self.menu_pad = QWidget(self)
         self.menu_pad.setGeometry(-350, 0, 500, self.desk_h)
         self.menu_menu = QWidget(self)
@@ -1281,7 +1312,7 @@ class MainWindow(QMainWindow):
         self.menu_rnd.setGeometry(10, 40, 120, 120)
         self.menu_btn = QPushButton(self)
         self.menu_btn.setGeometry(-450, 25, 600, 150)
-        self.menu_btn.clicked.connect(self.menu_btn_action)
+        self.menu_btn.clicked.connect(self.__menuBtnAct)
         self.menu_btn.setStyleSheet('background-color: transparent')
         self.menu_game_h = QWidget(self)
         self.menu_mode_h = QWidget(self)
@@ -1289,6 +1320,11 @@ class MainWindow(QMainWindow):
         self.menu_achievments_h = QWidget(self)
         self.menu_rules_h = QWidget(self)
         self.menu_stats_h = QWidget(self)
+        opacity = QGraphicsOpacityEffect(self)
+        opacity.setOpacity(0.2)
+        self.btn_hover = QWidget(self)
+        self.btn_hover.setGraphicsEffect(opacity)
+        self.btn_hover.hide()
         self.menu_tile = QWidget(self)
         self.menu_game = QPushButton(self, text='игра')
         self.menu_mode = QPushButton(self, text='режим')
@@ -1297,20 +1333,16 @@ class MainWindow(QMainWindow):
         self.menu_rules = QPushButton(self, text='правила')
         self.menu_stats = QPushButton(self, text='статистика')
         self.menu_exit = QPushButton(self, text='выход')
-        self.menu_game.clicked.connect(lambda: self.window_change(0))
-        self.menu_mode.clicked.connect(lambda: self.window_change(1))
-        self.menu_theme.clicked.connect(lambda: self.window_change(2))
-        self.menu_achievments.clicked.connect(lambda: self.window_change(3))
-        self.menu_rules.clicked.connect(lambda: self.window_change(4))
-        self.menu_stats.clicked.connect(lambda: self.window_change(5))
-        self.menu_exit.clicked.connect(self.close_app)
-        self.menu_game.setFont(self.font_30)
-        self.menu_mode.setFont(self.font_30)
-        self.menu_theme.setFont(self.font_30)
-        self.menu_achievments.setFont(self.font_30)
-        self.menu_rules.setFont(self.font_30)
-        self.menu_stats.setFont(self.font_30)
-        self.menu_exit.setFont(self.font_30)
+        self.menu_game.clicked.connect(lambda: self.__changeWindow(0))
+        self.menu_mode.clicked.connect(lambda: self.__changeWindow(1))
+        self.menu_theme.clicked.connect(lambda: self.__changeWindow(2))
+        self.menu_achievments.clicked.connect(lambda: self.__changeWindow(3))
+        self.menu_rules.clicked.connect(lambda: self.__changeWindow(4))
+        self.menu_stats.clicked.connect(lambda: self.__changeWindow(5))
+        self.menu_exit.clicked.connect(self.closeApp)
+        for btn in (self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats, self.menu_exit):
+            btn.setFont(self.font_30)
+            btn.installEventFilter(self)
         self.menu_game.setGeometry(-475, 200, 450, 100)
         self.menu_mode.setGeometry(-475, 325, 450, 100)
         self.menu_theme.setGeometry(-475, 450, 450, 100)
@@ -1325,27 +1357,28 @@ class MainWindow(QMainWindow):
         self.menu_achievments_h.setGeometry(-475, 575, 450, 100)
         self.menu_rules_h.setGeometry(-475, 700, 450, 100)
         self.menu_stats_h.setGeometry(-475, 825, 450, 100)
+        self.menu_btns = [self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats]
         self.menu_widgets = (self.menu_menu, self.menu_btn, self.menu_pad, self.menu_rnd, self.menu_txt)
         self.menu_points = (self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats,
                             self.menu_game_h, self.menu_mode_h, self.menu_theme_h, self.menu_achievments_h, self.menu_rules_h, self.menu_stats_h,
                             self.menu_exit, self.menu_tile)
         
-    def menu_btn_action(self):
-        self.move_menu()
+    def __menuBtnAct(self):
+        if not self.isTimerEnable or self.isGameEnded:
+            self.__moveMenu()
 
-    def new_mode_start(self, mode: int):
-        if self.isWindowAnimEnd:
-            settings_panel.check_input()
-            self.game_window_del()
-            self.choose_mode(mode)
-            self.game_window_init_new()
-            self.game_window_show() 
+    def newModeStart(self, mode: int):
+        if self.isWinAnimEnded:
+            self.__gameWinDel()
+            self.chooseMode(mode)
+            self.__gameWinInitNew()
+            self.__gameWinShow() 
 
-    def window_change(self, newwin: int):
+    def __changeWindow(self, newwin: int):
         if self.curwin != newwin and self.menu_btn.isEnabled():
             self.newwin = newwin
-            settings_panel.move_with_window_step1()
-            for btn in self.windows_btns:
+            settings_panel.moveWithWin1()
+            for btn in self.menu_btns:
                 btn.setDisabled(True)
             window_anim_group = QParallelAnimationGroup(self)
             for widget in self.windows[self.curwin]:
@@ -1383,12 +1416,12 @@ class MainWindow(QMainWindow):
             menu_tile_anim.setEndValue(QPoint(self.menu_tile.x(), 200 + 125 * newwin))
             menu_tile_anim.setDuration(400)
             window_anim_group.addAnimation(menu_tile_anim)
-            self.isWindowAnimEnd = False
+            self.isWinAnimEnded = False
             window_anim_group.start()
             self.window_timer.start()
 
-    def move_window(self):
-        for btn in self.windows_btns:
+    def __moveWindow(self):
+        for btn in self.menu_btns:
             btn.setDisabled(False)
         window_anim_group = QParallelAnimationGroup(self)
         for widget in self.windows[self.curwin]:
@@ -1407,11 +1440,11 @@ class MainWindow(QMainWindow):
         window_anim_group.start()
         self.curwin = self.newwin
         self.window_timer.stop()
-        self.isWindowAnimEnd = True
+        self.isWinAnimEnded = True
             
-    def move_menu(self):
-        if self.isMovingAble and self.isWindowAnimEnd:
-            settings_panel.move_with_menu()
+    def __moveMenu(self):
+        if self.isMovingAble and self.isWinAnimEnded:
+            settings_panel.moveWithMenu()
             self.isMenuActive = not self.isMenuActive
             menu_anim_group = QParallelAnimationGroup(self)
             if not self.isMenuActive:
@@ -1447,12 +1480,11 @@ class MainWindow(QMainWindow):
                     window_anim.setEndValue(QPoint(widget.x() + shift1 // 2, widget.y()))
                     window_anim.setDuration(400)
                     menu_anim_group.addAnimation(window_anim)
-            self.menu_menu.angle = 90
             menu_anim_group.start()
             self.menu_btn.setEnabled(False)
             self.menu_timer.start()
 
-    def get_game_state(self):
+    def __getGameState(self) -> str:
         if not self.isWinner:
             for i in range(self.ysize):
                 for j in range(self.xsize):
@@ -1470,7 +1502,7 @@ class MainWindow(QMainWindow):
                         return 'continue'
         return 'end'
     
-    def move_tiles(self, direction: str):
+    def __moveTiles(self, direction: str):
         match direction:
             case 'left':
                 for i in range(self.ysize):
@@ -1485,7 +1517,7 @@ class MainWindow(QMainWindow):
                             self.game_area[i][new_pos] = self.game_area[i][j]
                             if new_pos != j:
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
                         else:
                             if self.game_area[i][new_pos][1] == None:
                                 self.game_area[i][new_pos][1] = self.game_area[i][j][0]
@@ -1494,12 +1526,12 @@ class MainWindow(QMainWindow):
                                 if self.curmode != 3:
                                     self.merge_cnt += 1
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
                             else:
                                 new_pos += 1
                                 self.game_area[i][new_pos] = self.game_area[i][j]
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
             case 'right':
                 for i in range(self.ysize):
                     for j in range(self.xsize - 2, -1, -1):
@@ -1513,7 +1545,7 @@ class MainWindow(QMainWindow):
                             self.game_area[i][new_pos] = self.game_area[i][j]
                             if new_pos != j:
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
                         else:
                             if self.game_area[i][new_pos][1] == None:
                                 self.game_area[i][new_pos][1] = self.game_area[i][j][0]
@@ -1522,12 +1554,12 @@ class MainWindow(QMainWindow):
                                 if self.curmode != 3:
                                     self.merge_cnt += 1
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
                             else:
                                 new_pos -= 1
                                 self.game_area[i][new_pos] = self.game_area[i][j]
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
             case 'up':
                 for j in range(self.xsize):
                     for i in range(1, self.ysize):
@@ -1541,7 +1573,7 @@ class MainWindow(QMainWindow):
                             self.game_area[new_pos][j] = self.game_area[i][j]
                             if new_pos != i:
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
                         else:
                             if self.game_area[new_pos][j][1] == None:
                                 self.game_area[new_pos][j][1] = self.game_area[i][j][0]
@@ -1550,12 +1582,12 @@ class MainWindow(QMainWindow):
                                 if self.curmode != 3:
                                     self.merge_cnt += 1
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
                             else:
                                 new_pos += 1
                                 self.game_area[new_pos][j] = self.game_area[i][j]
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
             case 'down':
                 for j in range(self.xsize):
                     for i in range(self.ysize - 2, -1, -1):
@@ -1569,7 +1601,7 @@ class MainWindow(QMainWindow):
                             self.game_area[new_pos][j] = self.game_area[i][j]
                             if new_pos != i:
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
                         else:
                             if self.game_area[new_pos][j][1] == None:
                                 self.game_area[new_pos][j][1] = self.game_area[i][j][0]
@@ -1578,12 +1610,12 @@ class MainWindow(QMainWindow):
                                 if self.curmode != 3:
                                     self.merge_cnt += 1
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
                             else:
                                 new_pos -= 1
                                 self.game_area[new_pos][j] = self.game_area[i][j]
                                 self.game_area[i][j] = [None, None, 2]
-                                self.changes = True
+                                self.wereTilesChanged = True
         for i in range(self.ysize):
             for j in range(self.xsize):
                 if self.game_area[i][j][0] != None:
@@ -1600,8 +1632,8 @@ class MainWindow(QMainWindow):
                         self.pos_anim.addAnimation(tile_anim)
         self.pos_anim.start()
     
-    def add_tiles(self, amount_of_tiles: int, start=False, tiles=[]):
-        for k in range(amount_of_tiles):
+    def addTiles(self, amount: int, start=False, tiles=[]):
+        for k in range(amount):
             self.isMovingAble = False
             sec_break = False
             for i in range(self.ysize):
@@ -1650,15 +1682,16 @@ class MainWindow(QMainWindow):
         self.move_timer.start()
         if self.isGameEnded:
             if self.isWinner:
-                self.size_anim.finished.connect(lambda: self.show_winend_msg('win'))
+                self.size_anim.finished.connect(lambda: self.winEndMsgShow('win'))
             else:
-                self.size_anim.finished.connect(lambda: self.show_winend_msg('end'))
+                self.size_anim.finished.connect(lambda: self.winEndMsgShow('end'))
         elif self.isTimerEnable and self.isFirstTilesAdding:
             self.timer.start()
+            self.timer.appear()
             self.isFirstTilesAdding = False
         self.size_anim.start()
 
-    def game_window_del(self):
+    def __gameWinDel(self):
         for widget in self.windows[0]:
             if isinstance(widget, list):
                 for i in range(self.ysize):
@@ -1669,7 +1702,7 @@ class MainWindow(QMainWindow):
                 widget.deleteLater()
                 del widget
 
-    def game_window_show(self):
+    def __gameWinShow(self):
         for widget in self.windows[0]:
             if isinstance(widget, list):
                 for i in range(self.ysize):
@@ -1678,11 +1711,11 @@ class MainWindow(QMainWindow):
             else:
                 widget.show()
 
-    def game_window_init_new(self):
+    def __gameWinInitNew(self):
         self.isGameEnded = False
         self.isWinner = False
         self.score = 0
-        self.game_window_init()
+        self.__gameWinInit()
         self.opacity.setOpacity(0)
         self.windows[0] = self.game_widgets
         new_game_init_anim_group = QParallelAnimationGroup(self)
@@ -1708,19 +1741,19 @@ class MainWindow(QMainWindow):
                     new_game_init_anim.setDuration(0)
                     new_game_init_anim_group.addAnimation(new_game_init_anim)
         new_game_init_anim_group.start()
-        self.window_change(0)
-        self.clr_change(self.clrtheme)
+        self.__changeWindow(0)
+        self.colorChange(self.clrtheme)
         self.new_game_timer.start()
 
-    def new_game_tiles(self):
+    def __newGameTiles(self):
         if self.isMenuActive:
-            self.move_menu()
+            self.__moveMenu()
             self.new_game_timer.setInterval(400)
         else:
             self.new_game_timer.stop()
-            self.add_tiles(2)
+            self.addTiles(2)
 
-    def game_window_init(self):
+    def __gameWinInit(self):
         self.isMovingAble = True
         self.game_area_pos = [[[] for j in range(self.xsize)] for i in range(self.ysize)]
         self.game_area = [[[None, None, 2] for j in range(self.xsize)] for i in range(self.ysize)]
@@ -1797,17 +1830,17 @@ class MainWindow(QMainWindow):
         self.continue_game_btn_panel.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         self.continue_game_btn_panel.setFont(self.font_16)
         self.new_game_btn = QPushButton(self)
-        self.new_game_btn.clicked.connect(self.new_game_btn_action)
+        self.new_game_btn.clicked.connect(self.__newGameBtnAct)
         self.new_game_btn.setGeometry(QRect(670, 730, 0, 0))
         self.new_game_btn.setStyleSheet('background-color: transparent')
         self.new_game_btn.setEnabled(False)
         self.change_mode_btn = QPushButton(self)
-        self.change_mode_btn.clicked.connect(self.change_mode_btn_action)
+        self.change_mode_btn.clicked.connect(self.__changeModeBtnAct)
         self.change_mode_btn.setGeometry(QRect(980, 730, 0, 0))
         self.change_mode_btn.setStyleSheet('background-color: transparent')
         self.change_mode_btn.setEnabled(False)
         self.continue_game_btn = QPushButton(self)
-        self.continue_game_btn.clicked.connect(self.continue_game_btn_action)
+        self.continue_game_btn.clicked.connect(self.__continueGameBtnAct)
         self.continue_game_btn.setGeometry(QRect(980, 730, 0, 0))
         self.continue_game_btn.setStyleSheet('background-color: transparent')
         self.continue_game_btn.setEnabled(False)
@@ -1823,33 +1856,31 @@ class MainWindow(QMainWindow):
                              self.winlose_msg_pad, self.new_game_btn, self.change_mode_btn, self.continue_game_btn,
                              self.new_game_btn_panel, self.change_mode_btn_panel, self.continue_game_btn_panel, self.winlose_msg_text]
         if self.isTimerEnable:
-            self.timer = Timer()
+            self.timer = Timer(self.bg_plain.x() + self.bg_plain.width() + 50, self.bg_plain.y())
             self.timer.setParent(self)
-            self.timer.move(self.bg_plain.x() + self.bg_plain.width() + 50, self.bg_plain.y())
-            self.timer.setGeometry(self.timer.x(), self.timer.y(), self.desk_w, self.desk_h)
             self.game_widgets.append(self.timer)
         else:
             self.timer = QWidget()
 
-    def new_game_btn_action(self):
-        self.game_window_del()
-        self.game_window_init_new()
-        self.game_window_show()
+    def __newGameBtnAct(self):
+        self.__gameWinDel()
+        self.__gameWinInitNew()
+        self.__gameWinShow()
 
-    def change_mode_btn_action(self):
+    def __changeModeBtnAct(self):
         if not self.isMenuActive:
-            self.move_menu()
+            self.__moveMenu()
             self.change_mode_timer.setInterval(600)
             self.change_mode_timer.start()
         else:
             self.change_mode_timer.setInterval(0)
             self.change_mode_timer.start()
 
-    def change_mode_timer_action(self):
+    def __changeModeTimerAct(self):
         self.change_mode_timer.stop()
-        self.window_change(1)
+        self.__changeWindow(1)
 
-    def continue_game_btn_action(self):
+    def __continueGameBtnAct(self):
         self.opacity.setOpacity(0)
         self.new_game_btn.setGeometry(QRect(self.new_game_btn.geometry().adjusted(0, 0, -270, -80)))
         self.continue_game_btn.setGeometry(QRect(self.continue_game_btn.geometry().adjusted(0, 0, -270, -80)))
@@ -1858,25 +1889,25 @@ class MainWindow(QMainWindow):
         self.winlose_msg_text.setText('')
         self.isGameEnded = False
         if self.isTimerEnable:
-            self.timer = Timer()
             self.timer.start()
+            self.timer.appear()
 
-    def enable_moving(self):
+    def __enableMoving(self):
         self.move_timer.stop()
         self.isMovingAble = True
 
-    def after_action(self):
+    def __afterAction(self):
         self.timer_times += 1
         if self.timer_times == 2:
-            self.add_tiles(1)
+            self.addTiles(1)
             self.action_timer.setInterval(100)
         elif self.timer_times == 3:
             self.action_timer.stop()
-            self.show_winend_msg(self.get_game_state())
-            self.achievments_check()
-            self.stats_update()
+            self.winEndMsgShow(self.__getGameState())
+            self.__achievCheck()
+            self.__statsUpdate()
         else:
-            self.set_tiles_style()
+            self.__setTilesStyle()
             for i in range(self.ysize):
                 for j in range(self.xsize):
                     if self.game_area[i][j][2] > self.best_tiles_lst[self.curmode]:
@@ -1891,24 +1922,34 @@ class MainWindow(QMainWindow):
                                         self.game_area[i][j][1] = None
             self.action_timer.setInterval(50)
 
-    def enable_menu_moving(self):
+    def __enableMenuMoving(self):
         self.menu_btn.setEnabled(True)
         self.menu_timer.stop()
 
-    def keyPressEvent(self, e):
-        self.changes = False
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Enter:
+            self.btn_hover.show()
+            self.btn_hover.setGeometry(watched.geometry())
+            return True
+        elif event.type() == QEvent.Leave:
+            self.btn_hover.hide()
+            return True
+        return super().eventFilter(watched, event)
+    
+    def keyPressEvent(self, event):
+        self.wereTilesChanged = False
         if self.isMovingAble and not self.isMenuActive and not self.isGameEnded and self.curwin == 0 and self.menu_btn.isEnabled():
             self.pos_anim = QParallelAnimationGroup()
             self.size_anim = QParallelAnimationGroup()
-            if e.key() == Qt.Key_D or e.key() == Qt.Key_Right or e.key() == 1042:
-                self.move_tiles('right')
-            elif e.key() == Qt.Key_A or e.key() == Qt.Key_Left or e.key() == 1060:
-                self.move_tiles('left')
-            elif e.key() == Qt.Key_W or e.key() == Qt.Key_Up or e.key() == 1062:
-                self.move_tiles('up')
-            elif e.key() == Qt.Key_S or e.key() == Qt.Key_Down or e.key() == 1067:
-                self.move_tiles('down')
-            if self.changes:
+            if event.key() == Qt.Key_D or event.key() == Qt.Key_Right or event.key() == 1042:
+                self.__moveTiles('right')
+            elif event.key() == Qt.Key_A or event.key() == Qt.Key_Left or event.key() == 1060:
+                self.__moveTiles('left')
+            elif event.key() == Qt.Key_W or event.key() == Qt.Key_Up or event.key() == 1062:
+                self.__moveTiles('up')
+            elif event.key() == Qt.Key_S or event.key() == Qt.Key_Down or event.key() == 1067:
+                self.__moveTiles('down')
+            if self.wereTilesChanged:
                 self.score_value.setText(str(self.score))
                 if self.score > self.best_scores_lst[self.curmode]:
                     self.best_scores_lst[self.curmode] = self.score
@@ -1919,24 +1960,23 @@ class MainWindow(QMainWindow):
                     self.timer.restart()
                 self.action_timer.start()
 
-    def close_app(self):
-        self.write_save_file()
+    def closeApp(self):
+        self.__writeSaveFile()
         self.close()
 
-save_path = 'save.sav'
 app = QApplication(sys.argv)
 main_window = MainWindow()
 main_window.showMaximized()
 settings_panel = SettingsPanel()
 main_window.grid.addWidget(settings_panel)
 for btn in (
-    main_window.windows_btns + 
-    [settings_panel.back_btn, settings_panel.start_btn] + 
+    main_window.menu_btns + 
+    [settings_panel.back_btn, settings_panel.start_btn, settings_panel.timer_on_btn, settings_panel.timer_off_btn] +
     [main_window.new_game_btn, main_window.continue_game_btn, main_window.change_mode_btn, main_window.mode_btn1, main_window.mode_btn2, main_window.mode_btn3, main_window.mode_btn3, main_window.mode_btn4, main_window.theme1_btn, main_window.theme2_btn, main_window.theme3_btn, main_window.menu_exit, main_window.menu_btn]
 ): btn.setFocusPolicy(Qt.NoFocus)
-main_window.clr_change(main_window.clrtheme)
+main_window.colorChange(main_window.clrtheme)
 if not main_window.isSaveExists:
-    main_window.add_tiles(2)
+    main_window.addTiles(2)
 else:
-    main_window.add_tiles(main_window.game_area_config.pop(-1), True, main_window.game_area_config)
+    main_window.addTiles(main_window.game_area_config.pop(-1), True, main_window.game_area_config)
 sys.exit(app.exec_())
