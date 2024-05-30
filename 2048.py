@@ -1,12 +1,7 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-import sys
-import random
-import math
-import pandas
-import os.path
-import pyreadstat
+import sys, random, math, pandas, os.path, pyreadstat
 
 class Timer(QLabel):
     def __init__(self, startx, starty):
@@ -153,42 +148,34 @@ class SettingsPanel(QWidget):
         self.line_nom1.setMaxLength(4)
         self.line_nom1.setFont(main_window.font_25)
         self.line_nom1.setGeometry(QRect(690, 425, 210, 75))
-        self.line_nom1.editingFinished.connect(lambda: self.checkInput(self.line_nom1))
         self.line_nom2 = QLineEdit('4', self)
         self.line_nom2.setMaxLength(4)
         self.line_nom2.setFont(main_window.font_25)
         self.line_nom2.setGeometry(QRect(690, 530, 210, 75))
-        self.line_nom2.editingFinished.connect(lambda: self.checkInput(self.line_nom2))
         self.line_chance1 = QLineEdit('90', self)
         self.line_chance1.setMaxLength(2)
         self.line_chance1.setFont(main_window.font_25)
         self.line_chance1.setGeometry(QRect(990, 425, 210, 75))
-        self.line_chance1.editingFinished.connect(lambda: self.checkInput(self.line_chance1))
         self.line_chance2 = QLineEdit('10', self)
         self.line_chance2.setMaxLength(2)
         self.line_chance2.setFont(main_window.font_25)
         self.line_chance2.setGeometry(QRect(990, 530, 210, 75))
-        self.line_chance2.editingFinished.connect(lambda: self.checkInput(self.line_chance2))
         self.line_winnomin = QLineEdit('2048', self)
         self.line_winnomin.setMaxLength(6)
         self.line_winnomin.setFont(main_window.font_25)
         self.line_winnomin.setGeometry(QRect(880, 662, 320, 75))
-        self.line_winnomin.editingFinished.connect(lambda: self.checkInput(self.line_winnomin))
         self.line_interval = QLineEdit('3', self)
         self.line_interval.setMaxLength(2)
         self.line_interval.setFont(main_window.font_25)
         self.line_interval.setGeometry(QRect(1550, 530, 210, 75))
-        self.line_interval.editingFinished.connect(lambda: self.checkInput(self.line_interval))
         self.line_ysize = QLineEdit('4', self)
         self.line_ysize.setMaxLength(1)
         self.line_ysize.setFont(main_window.font_25)
         self.line_ysize.setGeometry(QRect(1630, 662, 130, 75))
-        self.line_ysize.editingFinished.connect(lambda: self.checkInput(self.line_ysize))
         self.line_xsize = QLineEdit('4', self)
         self.line_xsize.setMaxLength(1)
         self.line_xsize.setFont(main_window.font_25)
         self.line_xsize.setGeometry(QRect(1630, 792, 130, 75))
-        self.line_xsize.editingFinished.connect(lambda: self.checkInput(self.line_xsize))
         validator = QRegExpValidator(QRegExp(r'[0-9]+'))
         self.start_btn = QPushButton('начать', self)
         self.start_btn.setFont(main_window.font_25)
@@ -220,11 +207,12 @@ class SettingsPanel(QWidget):
         self.timer_off_btn.setGeometry(QRect(1550, 425, 210, 80))
         self.timer_off_btn.clicked.connect(lambda: self.__timerStateChange(False))
         self.timer_off_btn.installEventFilter(self)
-        [widget.move(QPoint(widget.x() - 1920, widget.y())) for widget in self.findChildren(QWidget)]
+        [widget.move(QPoint(widget.x() - 2095, widget.y())) for widget in self.findChildren(QWidget)]
         self.lines_tpl = (self.line_nom1, self.line_nom2, self.line_chance1, self.line_chance2, self.line_interval, self.line_winnomin, self.line_xsize, self.line_ysize)
         for line in self.lines_tpl:
             line.setValidator(validator)
             line.setFocusPolicy(Qt.ClickFocus)
+            line.installEventFilter(self)
 
     def __timerStateChange(self, timerState: bool):
         if timerState:
@@ -241,7 +229,10 @@ class SettingsPanel(QWidget):
     def checkInput(self, line: QLineEdit):
         self.line_buffer = line
         if line in self.lines_tpl:
-            num = int(line.text())
+            if line.text() == '':
+                num = 0
+            else:
+                num = int(line.text())
             match line:
                 case self.line_interval:
                     if num < 2:
@@ -299,19 +290,18 @@ class SettingsPanel(QWidget):
         self.timer_state_tile.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.tile_color2)
 
     def moveWithMenu(self):
-        if main_window.curwin == 1:
-            if main_window.isMenuActive:
-                shiftx = -175
-            else:
-                shiftx = 175
-            anim_group = QParallelAnimationGroup(self)
-            for widget in self.findChildren(QWidget):
-                anim = QPropertyAnimation(widget, b'pos')
-                anim.setEasingCurve(QEasingCurve.OutCubic)
-                anim.setDuration(400)
-                anim.setEndValue(QPoint(widget.x() + shiftx, widget.y()))
-                anim_group.addAnimation(anim)
-            anim_group.start()
+        if main_window.isMenuActive:
+            shiftx = -175
+        else:
+            shiftx = 175
+        anim_group = QParallelAnimationGroup(self)
+        for widget in self.findChildren(QWidget):
+            anim = QPropertyAnimation(widget, b'pos')
+            anim.setEasingCurve(QEasingCurve.OutCubic)
+            anim.setDuration(400)
+            anim.setEndValue(QPoint(widget.x() + shiftx, widget.y()))
+            anim_group.addAnimation(anim)
+        anim_group.start()
 
     def moveWithWin1(self):
         if self.isOnScreen and (main_window.newwin == 1 or main_window.curwin == 1):
@@ -372,13 +362,17 @@ class SettingsPanel(QWidget):
         self.timer_off_btn.setEnabled(True)
 
     def eventFilter(self, watched, event):
-        if event.type() == QEvent.Enter:
-            self.btn_hover.show()
-            self.btn_hover.setGeometry(watched.geometry())
-            return True
-        elif event.type() == QEvent.Leave:
-            self.btn_hover.hide()
-            return True
+        if isinstance(watched, QPushButton):
+            if event.type() == QEvent.Enter:
+                self.btn_hover.show()
+                self.btn_hover.setGeometry(watched.geometry())
+                return True
+            elif event.type() == QEvent.Leave:
+                self.btn_hover.hide()
+                return True
+        else:
+            if event.type() == QEvent.Leave:
+                self.checkInput(watched)
         return super().eventFilter(watched, event)
 
 class MainWindow(QMainWindow):
@@ -1746,6 +1740,9 @@ class MainWindow(QMainWindow):
         self.new_game_timer.start()
 
     def __newGameTiles(self):
+        if self.mode_title.x() < 600:
+            for widget in self.windows[1]:
+                widget.move(widget.x() + 175, widget.y())
         if self.isMenuActive:
             self.__moveMenu()
             self.new_game_timer.setInterval(400)
@@ -1845,7 +1842,7 @@ class MainWindow(QMainWindow):
         self.continue_game_btn.setStyleSheet('background-color: transparent')
         self.continue_game_btn.setEnabled(False)
         self.winlose_msg_text = QLabel(self)
-        self.font_var.setPointSize(12 * max(self.ysize, self.xsize))
+        self.font_var.setPointSize(12 * min(self.ysize, self.xsize))
         self.winlose_msg_text.setGeometry(QRect(round(1920 - 162.5 * self.xsize) // 2, 400 - 25 * self.ysize, round(162.5 * self.xsize), 310))
         self.winlose_msg_text.setFont(self.font_var)
         self.winlose_msg_text.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -1870,11 +1867,9 @@ class MainWindow(QMainWindow):
     def __changeModeBtnAct(self):
         if not self.isMenuActive:
             self.__moveMenu()
-            self.change_mode_timer.setInterval(600)
             self.change_mode_timer.start()
         else:
-            self.change_mode_timer.setInterval(0)
-            self.change_mode_timer.start()
+            self.__changeWindow(1)
 
     def __changeModeTimerAct(self):
         self.change_mode_timer.stop()
@@ -1927,7 +1922,7 @@ class MainWindow(QMainWindow):
         self.menu_timer.stop()
 
     def eventFilter(self, watched, event):
-        if event.type() == QEvent.Enter:
+        if event.type() == QEvent.Enter and self.menu_btn.isEnabled():
             self.btn_hover.show()
             self.btn_hover.setGeometry(watched.geometry())
             return True
