@@ -193,6 +193,7 @@ class SettingsPanel(QWidget):
         opacity = QGraphicsOpacityEffect(self)
         opacity.setOpacity(0.2)
         self.btn_hover = QWidget(self)
+        self.btn_hover.setStyleSheet('border-radius: 10px')
         self.btn_hover.setGraphicsEffect(opacity)
         self.btn_hover.hide()
         self.timer_state_tile = QWidget(self)
@@ -230,9 +231,8 @@ class SettingsPanel(QWidget):
         self.line_buffer = line
         if line in self.lines_tpl:
             if line.text() == '':
-                num = 0
-            else:
-                num = int(line.text())
+                line.setText('0')
+            num = int(line.text())
             match line:
                 case self.line_interval:
                     if num < 2:
@@ -245,8 +245,12 @@ class SettingsPanel(QWidget):
                     elif num > 6:
                         line.setText('6')
                 case self.line_chance1:
+                    if line.text() == '0':
+                        line.setText('1')
                     self.line_chance2.setText(str(100 - int(line.text())))
                 case self.line_chance2:
+                    if line.text() == '0':
+                        line.setText('1')
                     self.line_chance1.setText(str(100 - int(line.text())))
                 case self.line_nom1 | self.line_nom2:
                     if num < 2:
@@ -373,6 +377,8 @@ class SettingsPanel(QWidget):
         else:
             if event.type() == QEvent.Leave:
                 self.checkInput(watched)
+                self.setFocus()
+                return True
         return super().eventFilter(watched, event)
 
 class MainWindow(QMainWindow):
@@ -1146,17 +1152,6 @@ class MainWindow(QMainWindow):
         self.achiev8_desc.setFont(self.font_10)
         self.achiev8_desc.setGeometry(QRect(1430, 900 - self.desk_h, 320, 70))
         self.achiev8_desc.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self.achievment_msg_pad = QWidget(self)
-        self.achievment_msg_pad.setGeometry(QRect(1360, self.desk_h + 150, 500, 150))
-        self.achievment_msg_text = QLabel('получено новое достижение',self)
-        self.achievment_msg_text.setWordWrap(True)
-        self.achievment_msg_text.setFont(self.font_18)
-        self.achievment_msg_text.setGeometry(QRect(1520, self.desk_h + 175, 330, 100))
-        self.achievment_msg_tile = QLabel('!', self)
-        self.achievment_msg_tile.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
-        self.achievment_msg_tile.setFont(self.font_40)
-        self.achievment_msg_tile.setGeometry(QRect(1385, self.desk_h + 175, 100, 100))
-        self.achievment_msg = [self.achievment_msg_pad, self.achievment_msg_text, self.achievment_msg_tile]
         self.achievments_dict = {
             self.achiev1_ico: False,
             self.achiev2_ico: False,
@@ -1286,6 +1281,17 @@ class MainWindow(QMainWindow):
         self.stats_ac_val.setFont(self.font_20)
         self.stats_ac_val.setAlignment(Qt.AlignVCenter)
         self.stats_ac_val.setGeometry(QRect(1740, 800 - self.desk_h, 110, 80))
+        self.achievment_msg_pad = QWidget(self)
+        self.achievment_msg_pad.setGeometry(QRect(1360, self.desk_h + 150, 500, 150))
+        self.achievment_msg_text = QLabel('получено новое достижение',self)
+        self.achievment_msg_text.setWordWrap(True)
+        self.achievment_msg_text.setFont(self.font_18)
+        self.achievment_msg_text.setGeometry(QRect(1520, self.desk_h + 175, 330, 100))
+        self.achievment_msg_tile = QLabel('!', self)
+        self.achievment_msg_tile.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
+        self.achievment_msg_tile.setFont(self.font_40)
+        self.achievment_msg_tile.setGeometry(QRect(1385, self.desk_h + 175, 100, 100))
+        self.achievment_msg = [self.achievment_msg_pad, self.achievment_msg_text, self.achievment_msg_tile]
         self.stats_widgets = (self.stats_title, self.stats_pad1, self.stats_pad2, self.stats_pad3, self.stats_pad4,
                               self.stats_mode_title1, self.stats_mode_title2, self.stats_mode_title3, self.stats_mode_title4,
                               self.stats_bs1, self.stats_bs2, self.stats_bs3, self.stats_ttm, 
@@ -1317,6 +1323,7 @@ class MainWindow(QMainWindow):
         opacity = QGraphicsOpacityEffect(self)
         opacity.setOpacity(0.2)
         self.btn_hover = QWidget(self)
+        self.btn_hover.setStyleSheet('border-radius: 10px')
         self.btn_hover.setGraphicsEffect(opacity)
         self.btn_hover.hide()
         self.menu_tile = QWidget(self)
