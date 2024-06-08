@@ -427,6 +427,7 @@ class MainWindow(QMainWindow):
     def __uiElementsInit(self):
         self.setWindowTitle('2048')
         self.setWindowFlag(Qt.FramelessWindowHint)
+        self.setWindowIcon(QIcon('sprites\icon.png'))
         self.centralWidget = QWidget()
         self.setCentralWidget(self.centralWidget)
         self.grid = QGridLayout(self.centralWidget)
@@ -1381,6 +1382,10 @@ class MainWindow(QMainWindow):
             settings_panel.moveWithWin1()
             for btn in self.menu_btns:
                 btn.setDisabled(True)
+            if self.isMenuActive == False:
+                shiftx = 175
+            else:
+                shiftx = 0
             window_anim_group = QParallelAnimationGroup(self)
             for widget in self.windows[self.curwin]:
                 if isinstance(widget, list):
@@ -1388,7 +1393,7 @@ class MainWindow(QMainWindow):
                         for j in range(self.xsize):
                             window_anim = QPropertyAnimation(widget[i][j][0], b"pos")
                             window_anim.setEasingCurve(QEasingCurve.OutCubic)
-                            window_anim.setEndValue(QPoint(widget[i][j][0].x(), widget[i][j][0].y() + self.desk_h))
+                            window_anim.setEndValue(QPoint(widget[i][j][0].x() + shiftx, widget[i][j][0].y() + self.desk_h))
                             window_anim.setDuration(400)
                             window_anim_group.addAnimation(window_anim)
                 else:
