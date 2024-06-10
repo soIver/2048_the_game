@@ -3,26 +3,29 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import sys, random, math, pandas, os.path, pyreadstat
 
-class View(QGraphicsView):
+class AppWindow(QGraphicsView):
     def __init__(self):
         super().__init__()
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.deskw = QDesktopWidget().width()
         self.deskh = QDesktopWidget().height()
+        wkf = self.deskw / 1920
+        hkf = self.deskh / 1200
+        self.skf = wkf * hkf
         self.setWindowTitle('2048')
         self.setMinimumSize(960, 600)
         self.setWindowIcon(QIcon('sprites\icon.png'))
         self.main_window = MainWindow(self)
         scene = QGraphicsScene()
         scene_widget = scene.addWidget(self.main_window)
-        scene_widget.setGeometry(QRectF(0, 0, self.deskw, self.deskh))
+        scene_widget.setGeometry(QRectF(0, 0, 1920, 1200))
         self.setScene(scene)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     def resizeEvent(self, event: QResizeEvent):
-        self.fitInView(QRectF(0, 0, round(self.deskw * 0.99), round(self.deskh * 0.91)), Qt.AspectRatioMode.IgnoreAspectRatio)
+        self.fitInView(QRectF(0, 0, 1915, 1050), Qt.AspectRatioMode.KeepAspectRatio)
 
     def wheelEvent(self, event):
         pass
@@ -64,7 +67,7 @@ class Timer(QLabel):
         self.move_timer_times += 1
         if self.move_timer_times == self.interval:
             self.stop()
-            main_window.winEndMsgShow('end')
+            view.main_window.winEndMsgShow('end')
             return
         pos_anim = QPropertyAnimation(self, b'pos', self)
         pos_anim.setDuration(500)
@@ -77,9 +80,9 @@ class Timer(QLabel):
         self.move(self.startx, self.starty)
         self.colorChange()
         self.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.first_clr, self.txt_clr))
-        self.xsize = main_window.xsize
-        self.ysize = main_window.ysize
-        self.interval = main_window.timer_interval
+        self.xsize = view.main_window.xsize
+        self.ysize = view.main_window.ysize
+        self.interval = view.main_window.timer_interval
         self.shifty = round(162.5 * (self.ysize - 1)) // (self.interval - 1)
         self.setText(str(self.interval))
         self.move_timer_times = 0
@@ -121,20 +124,20 @@ class Timer(QLabel):
         anim.start()
 
     def colorChange(self):
-        self.txt_clr = main_window.text_color2
-        self.first_clr = main_window.tile_color8
-        self.second_clr = main_window.tile_color16
-        self.third_clr = main_window.tile_color32
+        self.txt_clr = view.main_window.text_color2
+        self.first_clr = view.main_window.tile_color8
+        self.second_clr = view.main_window.tile_color16
+        self.third_clr = view.main_window.tile_color32
     
 class SettingsPanel(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         super().__init__(parent)
         self.isOnScreen = False
         self.isAnimEnded = True
         self.isTimerEnable = True
-        self.__uiElementsInit()
+        self.__uiElementsInit(parent)
         
-    def __uiElementsInit(self):
+    def __uiElementsInit(self, parent):
         self.focusNextPrevChild(True)
         fonts_parent = QLabel()
         parent_font = fonts_parent.font()
@@ -142,15 +145,15 @@ class SettingsPanel(QWidget):
         fonts_parent.setFont(parent_font)
         self.font_var = fonts_parent.font()
         self.font_20 = fonts_parent.font()
-        self.font_20.setPointSize(20)
+        self.font_20.setPointSizeF(20 / parent.view.skf)
         self.font_35 = fonts_parent.font()
-        self.font_35.setPointSize(35)
+        self.font_35.setPointSizeF(35 / parent.view.skf)
         self.font_25 = fonts_parent.font()
-        self.font_25.setPointSize(25)
+        self.font_25.setPointSizeF(25 / parent.view.skf)
         self.font_18 = fonts_parent.font()
-        self.font_18.setPointSize(18)
+        self.font_18.setPointSizeF(18 / parent.view.skf)
         self.font_15 = fonts_parent.font()
-        self.font_15.setPointSize(15)
+        self.font_15.setPointSizeF(15 / parent.view.skf)
         self.pad = QWidget(self)
         self.pad.setGeometry(QRect(610, 200, 1220, 705))
         self.pad.setMouseTracking(True)
@@ -312,19 +315,19 @@ class SettingsPanel(QWidget):
         return pow(2, round(math.log(num, 2)))
 
     def colorChange(self):
-        self.pad.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.pad_color)
-        self.title.setStyleSheet('background-color: %s; color: %s' % (main_window.pad_color, main_window.text_color1))
+        self.pad.setStyleSheet('background-color: %s; border-radius: 10px' % view.main_window.pad_color)
+        self.title.setStyleSheet('background-color: %s; color: %s' % (view.main_window.pad_color, view.main_window.text_color1))
         for widget in (self.pad_mini1, self.pad_mini2, self.pad_mini3, self.pad_mini4, self.pad_mini4_2, self.pad_mini5, self.pad_mini6):
-            widget.setStyleSheet("background-color: %s; color: %s; border-radius: 10px; padding: 10px" % (main_window.hollow_color, main_window.text_color1))
+            widget.setStyleSheet("background-color: %s; color: %s; border-radius: 10px; padding: 10px" % (view.main_window.hollow_color, view.main_window.text_color1))
         for widget in (self.line_nom1, self.line_nom2, self.line_chance1, self.line_chance2, self.line_winnomin, self.line_xsize, self.line_ysize, self.line_interval):
-            widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px; padding: 10px' % (main_window.text_color1, main_window.text_color2))
-        self.start_btn.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (main_window.tile_color16, main_window.text_color2))
-        self.back_btn.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (main_window.tile_color32, main_window.text_color2))
-        self.timer_on.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.pad_color)
-        self.timer_off.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.pad_color)
-        self.timer_on_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0); color: %s; border-radius: 10px' % main_window.text_color1)
-        self.timer_off_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0); color: %s; border-radius: 10px' % main_window.text_color1)
-        self.timer_state_tile.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.tile_color2)
+            widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px; padding: 10px' % (view.main_window.text_color1, view.main_window.text_color2))
+        self.start_btn.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (view.main_window.tile_color16, view.main_window.text_color2))
+        self.back_btn.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (view.main_window.tile_color32, view.main_window.text_color2))
+        self.timer_on.setStyleSheet('background-color: %s; border-radius: 10px' % view.main_window.pad_color)
+        self.timer_off.setStyleSheet('background-color: %s; border-radius: 10px' % view.main_window.pad_color)
+        self.timer_on_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0); color: %s; border-radius: 10px' % view.main_window.text_color1)
+        self.timer_off_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0); color: %s; border-radius: 10px' % view.main_window.text_color1)
+        self.timer_state_tile.setStyleSheet('background-color: %s; border-radius: 10px' % view.main_window.tile_color2)
 
     def move(self):
         if self.isAnimEnded:
@@ -338,7 +341,7 @@ class SettingsPanel(QWidget):
             else:
                 shiftx = 1920
             anim_group = QParallelAnimationGroup(self)
-            for widget in main_window.mode_widgets[1:]:
+            for widget in view.main_window.mode_widgets[1:]:
                 anim = QPropertyAnimation(widget, b'pos')
                 anim.setEasingCurve(QEasingCurve.OutCubic)
                 anim.setDuration(600)
@@ -452,27 +455,27 @@ class MainWindow(QWidget):
         fonts_parent.setFont(parent_font)
         self.font_var = fonts_parent.font()
         self.font_50 = fonts_parent.font()
-        self.font_50.setPointSize(50)
+        self.font_50.setPointSizeF(50 / self.view.skf)
         self.font_40 = fonts_parent.font()
-        self.font_40.setPointSize(40)
+        self.font_40.setPointSizeF(40 / self.view.skf)
         self.font_35 = fonts_parent.font()
-        self.font_35.setPointSize(35)
+        self.font_35.setPointSizeF(35 / self.view.skf)
         self.font_30 = fonts_parent.font()
-        self.font_30.setPointSize(30)
+        self.font_30.setPointSizeF(30 / self.view.skf)
         self.font_25 = fonts_parent.font()
-        self.font_25.setPointSize(25)
+        self.font_25.setPointSizeF(25 / self.view.skf)
         self.font_20 = fonts_parent.font()
-        self.font_20.setPointSize(20)
+        self.font_20.setPointSizeF(20 / self.view.skf)
         self.font_18 = fonts_parent.font()
-        self.font_18.setPointSize(18)
+        self.font_18.setPointSizeF(18 / self.view.skf)
         self.font_16 = fonts_parent.font()
-        self.font_16.setPointSize(16)
+        self.font_16.setPointSizeF(16 / self.view.skf)
         self.font_15 = fonts_parent.font()
-        self.font_15.setPointSize(15)
+        self.font_15.setPointSizeF(15 / self.view.skf)
         self.font_14 = fonts_parent.font()
-        self.font_14.setPointSize(14)
+        self.font_14.setPointSizeF(14 / self.view.skf)
         self.font_10 = fonts_parent.font()
-        self.font_10.setPointSize(10)
+        self.font_10.setPointSizeF(10 / self.view.skf)
 
     def __readSaveFile(self):
         if os.path.exists(self.save_path):
@@ -555,6 +558,9 @@ class MainWindow(QWidget):
         pyreadstat.write_sav(df, self.save_path)
 
     def __firstGameInitEnd(self):
+        other_btns = [self.new_game_btn, self.continue_game_btn, self.change_mode_btn, self.mode_btn1, self.mode_btn2, self.mode_btn3, self.mode_btn3, self.mode_btn4, self.theme1_btn, self.theme2_btn, self.theme3_btn, self.menu_exit, self.menu_btn]
+        for btn in (other_btns + self.menu_btns + self.settings_panel.btns): 
+            btn.setFocusPolicy(Qt.NoFocus)
         self.isFirstGameInit = False
 
     def chooseMode(self, mode: int):
@@ -882,9 +888,9 @@ class MainWindow(QWidget):
                         self.game_area[i][j][0].setFont(new_tile_font)
         
     def __modeWinInit(self):
-        self.settings_panel = SettingsPanel()
+        self.settings_panel = SettingsPanel(parent=self)
         self.settings_panel.setParent(self)
-        self.settings_panel.setGeometry(-self.view.deskw + 175, -self.view.deskh, self.view.deskw, self.view.deskh)
+        self.settings_panel.setGeometry(-self.desk_w + 175, -self.desk_h, self.desk_w, self.desk_h)
         self.mode_title = QLabel("выбор режима игры", self)
         self.mode_title.setFont(self.font_50)
         self.mode_title.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
@@ -1297,7 +1303,7 @@ class MainWindow(QWidget):
         self.menu_txt = QLabel('меню', self)
         self.menu_txt.setGeometry(-350, 50, 350, 100)
         self.menu_txt.setFont(self.font_50)
-        self.menu_txt.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
+        self.menu_txt.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         self.menu_rnd = QLabel(self)
         self.menu_rnd.setGeometry(10, 40, 120, 120)
         self.menu_btn = QPushButton(self)
@@ -1952,18 +1958,12 @@ class MainWindow(QWidget):
         self.view.close()
 
 app = QApplication(sys.argv)
-view = View()
-main_window = view.main_window
+view = AppWindow()
 view.showMaximized()
-for btn in (
-    main_window.menu_btns + 
-    main_window.settings_panel.btns +
-    [main_window.new_game_btn, main_window.continue_game_btn, main_window.change_mode_btn, main_window.mode_btn1, main_window.mode_btn2, main_window.mode_btn3, main_window.mode_btn3, main_window.mode_btn4, main_window.theme1_btn, main_window.theme2_btn, main_window.theme3_btn, main_window.menu_exit, main_window.menu_btn]
-): btn.setFocusPolicy(Qt.NoFocus)
-main_window.colorChange(main_window.clrtheme)
-main_window.setFocus()
-if not main_window.isSaveExists:
-    main_window.addTiles(2)
+view.main_window.colorChange(view.main_window.clrtheme)
+view.main_window.setFocus()
+if not view.main_window.isSaveExists:
+    view.main_window.addTiles(2)
 else:
-    main_window.addTiles(main_window.game_area_config.pop(-1), True, main_window.game_area_config)
+    view.main_window.addTiles(view.main_window.game_area_config.pop(-1), True, view.main_window.game_area_config)
 sys.exit(app.exec_())
