@@ -3,6 +3,30 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import sys, random, math, pandas, os.path, pyreadstat
 
+class View(QGraphicsView):
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlag(Qt.FramelessWindowHint)
+        self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.deskw = QDesktopWidget().width()
+        self.deskh = QDesktopWidget().height()
+        self.setWindowTitle('2048')
+        self.setMinimumSize(960, 600)
+        self.setWindowIcon(QIcon('sprites\icon.png'))
+        self.main_window = MainWindow(self)
+        scene = QGraphicsScene()
+        scene_widget = scene.addWidget(self.main_window)
+        scene_widget.setGeometry(QRectF(0, 0, self.deskw, self.deskh))
+        self.setScene(scene)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+    def resizeEvent(self, event: QResizeEvent):
+        self.fitInView(QRectF(0, 0, round(self.deskw * 0.99), round(self.deskh * 0.91)), Qt.AspectRatioMode.IgnoreAspectRatio)
+
+    def wheelEvent(self, event):
+        pass
+
 class Timer(QLabel):
     def __init__(self, startx, starty):
         super().__init__()
@@ -112,102 +136,112 @@ class SettingsPanel(QWidget):
         
     def __uiElementsInit(self):
         self.focusNextPrevChild(True)
-        self.line_buffer = None
+        fonts_parent = QLabel()
+        parent_font = fonts_parent.font()
+        parent_font.setBold(True)
+        fonts_parent.setFont(parent_font)
+        self.font_var = fonts_parent.font()
+        self.font_20 = fonts_parent.font()
+        self.font_20.setPointSize(20)
+        self.font_35 = fonts_parent.font()
+        self.font_35.setPointSize(35)
+        self.font_25 = fonts_parent.font()
+        self.font_25.setPointSize(25)
+        self.font_18 = fonts_parent.font()
+        self.font_18.setPointSize(18)
+        self.font_15 = fonts_parent.font()
+        self.font_15.setPointSize(15)
         self.pad = QWidget(self)
         self.pad.setGeometry(QRect(610, 200, 1220, 705))
         self.pad.setMouseTracking(True)
         self.title = QLabel('параметры новой игры', self)
-        self.title.setFont(main_window.font_35)
+        self.title.setFont(self.font_35)
         self.title.setGeometry(QRect(610, 210, 1220, 100))
         self.title.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         self.pad_mini1 = QLabel('номиналы\nновых плиток', self)
-        self.pad_mini1.setFont(main_window.font_15)
+        self.pad_mini1.setFont(self.font_15)
         self.pad_mini1.setGeometry(QRect(670, 325, 250, 300))
         self.pad_mini1.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
         self.pad_mini2 = QLabel('шансы\nпоявления', self)
-        self.pad_mini2.setFont(main_window.font_15)
+        self.pad_mini2.setFont(self.font_15)
         self.pad_mini2.setGeometry(QRect(970, 325, 250, 300))
         self.pad_mini2.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
         self.pad_mini3 = QLabel('цель:', self)
-        self.pad_mini3.setFont(main_window.font_25)
+        self.pad_mini3.setFont(self.font_25)
         self.pad_mini3.setGeometry(QRect(670, 650, 550, 100))
         self.pad_mini4 = QLabel('настройка таймера', self)
-        self.pad_mini4.setFont(main_window.font_20)
+        self.pad_mini4.setFont(self.font_20)
         self.pad_mini4.setGeometry(QRect(1275, 325, 515, 300))
         self.pad_mini4.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
         self.pad_mini4_2 = QLabel('секунд:',self)
-        self.pad_mini4_2.setFont(main_window.font_25)
+        self.pad_mini4_2.setFont(self.font_25)
         self.pad_mini4_2.setGeometry(QRect(1275, 530, 515, 75))
         self.pad_mini5 = QLabel('высота поля:', self)
-        self.pad_mini5.setFont(main_window.font_20)
+        self.pad_mini5.setFont(self.font_20)
         self.pad_mini5.setGeometry(QRect(1275, 650, 515, 100))
         self.pad_mini6 = QLabel('ширина поля:', self)
-        self.pad_mini6.setFont(main_window.font_20)
+        self.pad_mini6.setFont(self.font_20)
         self.pad_mini6.setGeometry(QRect(1275, 780, 515, 100))
         self.line_nom1 = QLineEdit('2', self)
         self.line_nom1.setMaxLength(4)
-        self.line_nom1.setFont(main_window.font_25)
+        self.line_nom1.setFont(self.font_25)
         self.line_nom1.setGeometry(QRect(690, 425, 210, 75))
         self.line_nom2 = QLineEdit('4', self)
         self.line_nom2.setMaxLength(4)
-        self.line_nom2.setFont(main_window.font_25)
+        self.line_nom2.setFont(self.font_25)
         self.line_nom2.setGeometry(QRect(690, 530, 210, 75))
         self.line_chance1 = QLineEdit('90', self)
         self.line_chance1.setMaxLength(2)
-        self.line_chance1.setFont(main_window.font_25)
+        self.line_chance1.setFont(self.font_25)
         self.line_chance1.setGeometry(QRect(990, 425, 210, 75))
         self.line_chance2 = QLineEdit('10', self)
         self.line_chance2.setMaxLength(2)
-        self.line_chance2.setFont(main_window.font_25)
+        self.line_chance2.setFont(self.font_25)
         self.line_chance2.setGeometry(QRect(990, 530, 210, 75))
         self.line_winnomin = QLineEdit('2048', self)
         self.line_winnomin.setMaxLength(6)
-        self.line_winnomin.setFont(main_window.font_25)
+        self.line_winnomin.setFont(self.font_25)
         self.line_winnomin.setGeometry(QRect(880, 662, 320, 75))
         self.line_interval = QLineEdit('3', self)
         self.line_interval.setMaxLength(2)
-        self.line_interval.setFont(main_window.font_25)
+        self.line_interval.setFont(self.font_25)
         self.line_interval.setGeometry(QRect(1550, 530, 210, 75))
         self.line_ysize = QLineEdit('4', self)
         self.line_ysize.setMaxLength(1)
-        self.line_ysize.setFont(main_window.font_25)
+        self.line_ysize.setFont(self.font_25)
         self.line_ysize.setGeometry(QRect(1630, 662, 130, 75))
         self.line_xsize = QLineEdit('4', self)
         self.line_xsize.setMaxLength(1)
-        self.line_xsize.setFont(main_window.font_25)
+        self.line_xsize.setFont(self.font_25)
         self.line_xsize.setGeometry(QRect(1630, 792, 130, 75))
         validator = QRegExpValidator(QRegExp(r'[0-9]+'))
         self.start_btn = QPushButton('начать', self)
-        self.start_btn.setFont(main_window.font_25)
+        self.start_btn.setFont(self.font_25)
         self.start_btn.setGeometry(QRect(670, 780, 250, 100))
-        self.start_btn.clicked.connect(lambda: main_window.newModeStart(3))
         self.back_btn = QPushButton('назад',self)
-        self.back_btn.setFont(main_window.font_25)
+        self.back_btn.setFont(self.font_25)
         self.back_btn.setGeometry(QRect(970, 780, 250, 100))
         self.back_btn.clicked.connect(self.move)
-        main_window.mode_btn4.clicked.connect(self.move)
         self.timer_on = QWidget(self)
         self.timer_on.setGeometry(QRect(1300, 425, 210, 80))
         self.timer_off = QWidget(self)
         self.timer_off.setGeometry(QRect(1550, 425, 210, 80))
-        opacity = QGraphicsOpacityEffect(self)
-        opacity.setOpacity(0.2)
         self.btn_hover = QWidget(self)
-        self.btn_hover.setStyleSheet('border-radius: 10px')
-        self.btn_hover.setGraphicsEffect(opacity)
+        self.btn_hover.setStyleSheet('border-radius: 10px; background-color: rgba(255, 255, 255, 0.2)')
         self.btn_hover.hide()
         self.timer_state_tile = QWidget(self)
         self.timer_state_tile.setGeometry(QRect(1300, 425, 210, 80))
         self.timer_on_btn = QPushButton('включен', self)
-        self.timer_on_btn.setFont(main_window.font_18)
+        self.timer_on_btn.setFont(self.font_18)
         self.timer_on_btn.setGeometry(QRect(1300, 425, 210, 80))
         self.timer_on_btn.clicked.connect(lambda: self.__timerStateChange(True))
         self.timer_on_btn.installEventFilter(self)
         self.timer_off_btn = QPushButton('выключен', self)
-        self.timer_off_btn.setFont(main_window.font_18)
+        self.timer_off_btn.setFont(self.font_18)
         self.timer_off_btn.setGeometry(QRect(1550, 425, 210, 80))
         self.timer_off_btn.clicked.connect(lambda: self.__timerStateChange(False))
         self.timer_off_btn.installEventFilter(self)
+        self.btns = [self.back_btn, self.start_btn, self.timer_on_btn, self.timer_off_btn]
         [widget.move(QPoint(widget.x() - 2095, widget.y())) for widget in self.findChildren(QWidget)]
         self.lines_tpl = (self.line_nom1, self.line_nom2, self.line_chance1, self.line_chance2, self.line_interval, self.line_winnomin, self.line_xsize, self.line_ysize)
         for line in self.lines_tpl:
@@ -228,7 +262,6 @@ class SettingsPanel(QWidget):
         self.isTimerEnable = timerState
 
     def checkInput(self, line: QLineEdit):
-        self.line_buffer = line
         if line in self.lines_tpl:
             if line.text() == '':
                 line.setText('0')
@@ -245,11 +278,11 @@ class SettingsPanel(QWidget):
                     elif num > 6:
                         line.setText('6')
                 case self.line_chance1:
-                    if line.text() == '0':
+                    if num == 0:
                         line.setText('1')
                     self.line_chance2.setText(str(100 - int(line.text())))
                 case self.line_chance2:
-                    if line.text() == '0':
+                    if num == 0:
                         line.setText('1')
                     self.line_chance1.setText(str(100 - int(line.text())))
                 case self.line_nom1 | self.line_nom2:
@@ -289,46 +322,9 @@ class SettingsPanel(QWidget):
         self.back_btn.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (main_window.tile_color32, main_window.text_color2))
         self.timer_on.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.pad_color)
         self.timer_off.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.pad_color)
-        self.timer_on_btn.setStyleSheet('background-color: transparent; color: %s; border-radius: 10px' % main_window.text_color1)
-        self.timer_off_btn.setStyleSheet('background-color: transparent; color: %s; border-radius: 10px' % main_window.text_color1)
+        self.timer_on_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0); color: %s; border-radius: 10px' % main_window.text_color1)
+        self.timer_off_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0); color: %s; border-radius: 10px' % main_window.text_color1)
         self.timer_state_tile.setStyleSheet('background-color: %s; border-radius: 10px' % main_window.tile_color2)
-
-    def moveWithMenu(self):
-        if main_window.isMenuActive:
-            shiftx = -175
-        else:
-            shiftx = 175
-        anim_group = QParallelAnimationGroup(self)
-        for widget in self.findChildren(QWidget):
-            anim = QPropertyAnimation(widget, b'pos')
-            anim.setEasingCurve(QEasingCurve.OutCubic)
-            anim.setDuration(400)
-            anim.setEndValue(QPoint(widget.x() + shiftx, widget.y()))
-            anim_group.addAnimation(anim)
-        anim_group.start()
-
-    def moveWithWin1(self):
-        if self.isOnScreen and (main_window.newwin == 1 or main_window.curwin == 1):
-            anim_group = QParallelAnimationGroup(self)
-            for widget in self.findChildren(QWidget):
-                anim = QPropertyAnimation(widget, b'pos')
-                anim.setEasingCurve(QEasingCurve.OutCubic)
-                anim.setDuration(400)
-                anim.setEndValue(QPoint(widget.x(), widget.y() + 1920))
-                anim_group.addAnimation(anim)
-            if main_window.curwin == 1:
-                anim_group.finished.connect(self.__moveWithWin2)
-            anim_group.start()
-            
-    def __moveWithWin2(self):
-        anim_group = QParallelAnimationGroup(self)
-        for widget in self.findChildren(QWidget):
-            anim = QPropertyAnimation(widget, b'pos')
-            anim.setEasingCurve(QEasingCurve.OutCubic)
-            anim.setDuration(0)
-            anim.setEndValue(QPoint(widget.x(), widget.y() - 3840))
-            anim_group.addAnimation(anim)
-        anim_group.start()
 
     def move(self):
         if self.isAnimEnded:
@@ -381,9 +377,10 @@ class SettingsPanel(QWidget):
                 return True
         return super().eventFilter(watched, event)
 
-class MainWindow(QMainWindow):
-    def __init__(self):
+class MainWindow(QWidget):
+    def __init__(self, view):
         super().__init__()
+        self.view = view
         self.curwin = 0
         self.newwin = 0
         self.timer_times = 0
@@ -416,23 +413,15 @@ class MainWindow(QMainWindow):
         self.__achievWinInit()
         self.__readSaveFile()
         self.chooseMode(self.curmode)
-        self.__menuInit()
         self.__gameWinInit()
         self.__modeWinInit()
         self.__themeWinInit()
         self.__rulesWinInit()
         self.__statsWinInit()
+        self.__menuInit()
         self.windows = [self.game_widgets, self.mode_widgets, self.theme_widgets, self.achievments_widgets, self.rules_widgets, self.stats_widgets]
     
     def __uiElementsInit(self):
-        self.setWindowTitle('2048')
-        self.setWindowFlag(Qt.FramelessWindowHint)
-        self.setWindowIcon(QIcon('sprites\icon.png'))
-        self.centralWidget = QWidget()
-        self.setCentralWidget(self.centralWidget)
-        self.grid = QGridLayout(self.centralWidget)
-        self.opacity = QGraphicsOpacityEffect()
-        self.opacity.setOpacity(0)
         self.move_timer = QTimer()
         self.move_timer.setInterval(100)
         self.move_timer.timeout.connect(self.__enableMoving)
@@ -455,7 +444,7 @@ class MainWindow(QMainWindow):
         self.change_mode_timer.setInterval(600)
         self.change_mode_timer.timeout.connect(self.__changeModeTimerAct)
         self.game_init_timer = QTimer()
-        self.game_init_timer.setInterval(800)
+        self.game_init_timer.setInterval(1000)
         self.game_init_timer.timeout.connect(self.__firstGameInitEnd)
         fonts_parent = QLabel()
         parent_font = fonts_parent.font()
@@ -466,16 +455,14 @@ class MainWindow(QMainWindow):
         self.font_50.setPointSize(50)
         self.font_40 = fonts_parent.font()
         self.font_40.setPointSize(40)
-        self.font_25 = fonts_parent.font()
-        self.font_25.setPointSize(25)
-        self.font_20 = fonts_parent.font()
-        self.font_20.setPointSize(20)
         self.font_35 = fonts_parent.font()
         self.font_35.setPointSize(35)
         self.font_30 = fonts_parent.font()
         self.font_30.setPointSize(30)
         self.font_25 = fonts_parent.font()
         self.font_25.setPointSize(25)
+        self.font_20 = fonts_parent.font()
+        self.font_20.setPointSize(20)
         self.font_18 = fonts_parent.font()
         self.font_18.setPointSize(18)
         self.font_16 = fonts_parent.font()
@@ -600,17 +587,14 @@ class MainWindow(QMainWindow):
                 self.isTimerEnable = True
             case 3:
                 if not self.isFirstGameInit:
-                    settings_panel.setFocus()
-                    if not settings_panel.line_buffer == 0:
-                        settings_panel.checkInput(settings_panel.line_buffer)
-                    self.ysize = int(settings_panel.line_ysize.text())
-                    self.xsize = int(settings_panel.line_xsize.text())
-                    self.winnomin = int(settings_panel.line_winnomin.text())
-                    self.new_tile_nomin1 = int(settings_panel.line_nom1.text())
-                    self.new_tile_nomin2 = int(settings_panel.line_nom2.text())
-                    self.chance = int(settings_panel.line_chance2.text())
-                    self.timer_interval = int(settings_panel.line_interval.text())
-                    self.isTimerEnable = settings_panel.isTimerEnable
+                    self.ysize = int(self.settings_panel.line_ysize.text())
+                    self.xsize = int(self.settings_panel.line_xsize.text())
+                    self.winnomin = int(self.settings_panel.line_winnomin.text())
+                    self.new_tile_nomin1 = int(self.settings_panel.line_nom1.text())
+                    self.new_tile_nomin2 = int(self.settings_panel.line_nom2.text())
+                    self.chance = int(self.settings_panel.line_chance2.text())
+                    self.timer_interval = int(self.settings_panel.line_interval.text())
+                    self.isTimerEnable = self.settings_panel.isTimerEnable
             
     def __achievCheck(self):
         cnt = 0
@@ -706,11 +690,7 @@ class MainWindow(QMainWindow):
         self.winlose_msg_text.setText(text)
         btn1.setGeometry(QRect(btn1.geometry().adjusted(0, 0, 270, 80)))
         btn2.setGeometry(QRect(btn2.geometry().adjusted(0, 0, 270, 80)))
-        opacity_anim = QPropertyAnimation(self.opacity, b'opacity', self)
-        opacity_anim.setStartValue(0)
-        opacity_anim.setEndValue(0.7)
-        opacity_anim.setDuration(200)
-        opacity_anim.start()
+        self.winlose_msg_pad.setGeometry(round(self.desk_w - 162.5 * self.xsize) // 2, round(self.desk_h - 162.5 * self.ysize) // 2, round(162.5 * self.xsize), round(162.5 * self.ysize))
         size_anim_group = QParallelAnimationGroup(self)
         size_anim = QPropertyAnimation(btn1_panel, b'geometry')
         size_anim.setDuration(200)
@@ -750,6 +730,7 @@ class MainWindow(QMainWindow):
                 self.tile_color1024 = '#ffda18'
                 self.tile_color2048 = '#ffd600'
                 self.pad_color = '#bbada0'
+                self.pad_color2 = 'rgba(187, 173, 160, 0.5)'
                 self.text_color1 = '#776e65'
                 self.text_color2 = '#f9f6f2'
                 self.hollow_color = '#cdc1b4'
@@ -766,6 +747,7 @@ class MainWindow(QMainWindow):
                 self.tile_color1024 = '#4D6E69'
                 self.tile_color2048 = '#38544A'
                 self.pad_color = '#A0B3BB'
+                self.pad_color2 = 'rgba(160, 179, 187, 0.5)'
                 self.text_color1 = '#657477'
                 self.text_color2 = '#F2F7F9'
                 self.hollow_color = '#BED1D6'
@@ -782,6 +764,7 @@ class MainWindow(QMainWindow):
                 self.tile_color1024 = '#323232'
                 self.tile_color2048 = '#2D2D2D'
                 self.pad_color = '#5B5B5B'
+                self.pad_color2 = 'rgba(91, 91, 91, 0.5)'
                 self.text_color1 = '#464646'
                 self.text_color2 = '#FAFAFA'
                 self.hollow_color = '#676767'
@@ -850,7 +833,7 @@ class MainWindow(QMainWindow):
         for widget in (self.stats_bs1_val, self.stats_bs2_val, self.stats_bs3_val, self.stats_bt1_val, self.stats_bt2_val, self.stats_bt3_val, self.stats_ttm_val, self.stats_ac_val):
             widget.setStyleSheet('background-color: %s; color: %s; border-radius: 10px; padding: 1px' % (self.text_color1, self.text_color2))
         for widget in (self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats):
-            widget.setStyleSheet("background-color: transparent; color: %s" % self.text_color1)
+            widget.setStyleSheet("background-color: rgba(0, 0, 0, 0.0); color: %s" % self.text_color1)
         for widget in (self.menu_game_h, self.menu_mode_h, self.menu_theme_h, self.menu_achievments_h, self.menu_rules_h, self.menu_stats_h):
             widget.setStyleSheet("background-color: %s; color: %s; border-radius: 10px; padding: 10px" % (self.hollow_color, self.text_color1))
         for widget in (self.score_plain, self.best_plain):
@@ -866,14 +849,14 @@ class MainWindow(QMainWindow):
         self.menu_exit.setStyleSheet("background-color: %s; color: %s; border-radius: 10px" % (self.tile_color32, self.text_color2))
         self.menu_tile.setStyleSheet("background-color: %s; border-radius: 10px" % self.tile_color2)
         self.bg_plain.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color)
-        self.winlose_msg_pad.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color)
-        self.winlose_msg_text.setStyleSheet('background-color: transparent; color: %s' % self.text_color2)
+        self.winlose_msg_pad.setStyleSheet("background-color: %s; border-radius: 10px" % self.pad_color2)
+        self.winlose_msg_text.setStyleSheet('background-color: rgba(0, 0, 0, 0.0); color: %s' % self.text_color2)
         self.achievment_msg_pad.setStyleSheet('background-color: %s; border-radius: 10px' % self.pad_color)
         self.achievment_msg_text.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.pad_color, self.text_color1))
         self.achievment_msg_tile.setStyleSheet('background-color: %s; color: %s; border-radius: 10px' % (self.tile_color2, self.text_color1))
-        settings_panel.colorChange()
         if self.isTimerEnable:
             self.timer.colorChange()
+        self.settings_panel.colorChange()
         self.__achievCheck()
         self.__setTilesStyle()
 
@@ -899,6 +882,9 @@ class MainWindow(QMainWindow):
                         self.game_area[i][j][0].setFont(new_tile_font)
         
     def __modeWinInit(self):
+        self.settings_panel = SettingsPanel()
+        self.settings_panel.setParent(self)
+        self.settings_panel.setGeometry(-self.view.deskw + 175, -self.view.deskh, self.view.deskw, self.view.deskh)
         self.mode_title = QLabel("выбор режима игры", self)
         self.mode_title.setFont(self.font_50)
         self.mode_title.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
@@ -962,23 +948,26 @@ class MainWindow(QMainWindow):
         self.mode_btn1 = QPushButton(self)
         self.mode_btn1.setGeometry(QRect(610, 200 - self.desk_h, 580, 280))
         self.mode_btn1.clicked.connect(lambda: self.newModeStart(0))
-        self.mode_btn1.setStyleSheet('background-color: transparent')
+        self.mode_btn1.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
         self.mode_btn2 = QPushButton(self)
         self.mode_btn2.setGeometry(QRect(1250, 200 - self.desk_h, 580, 280))
-        self.mode_btn2.setStyleSheet('background-color: transparent')
+        self.mode_btn2.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
         self.mode_btn2.clicked.connect(lambda: self.newModeStart(1))
         self.mode_btn3 = QPushButton(self)
         self.mode_btn3.setGeometry(QRect(610, 625 - self.desk_h, 580, 280))
-        self.mode_btn3.setStyleSheet('background-color: transparent')
+        self.mode_btn3.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
         self.mode_btn3.clicked.connect(lambda: self.newModeStart(2))
         self.mode_btn4 = QPushButton(self)
         self.mode_btn4.setGeometry(QRect(1250, 625 - self.desk_h, 580, 280))
-        self.mode_btn4.setStyleSheet('background-color: transparent')
-        self.mode_widgets = [self.mode_title, self.mode_pad1, self.mode_pad2, self.mode_pad3, self.mode_pad4, 
+        self.mode_btn4.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
+        self.mode_btn4.clicked.connect(lambda: self.settings_panel.move())
+        self.settings_panel.start_btn.clicked.connect(lambda: self.newModeStart(3))
+        self.mode_widgets = (self.mode_title, self.mode_pad1, self.mode_pad2, self.mode_pad3, self.mode_pad4, 
                              self.mode_mode1, self.mode_mode2, self.mode_mode3, self.mode_mode4,
                              self.mode_desc1, self.mode_desc2, self.mode_desc3, self.mode_desc4,
                              self.mode_img1, self.mode_img2, self.mode_img3, self.mode_img4,
-                             self.mode_btn1, self.mode_btn2, self.mode_btn3, self.mode_btn4]
+                             self.mode_btn1, self.mode_btn2, self.mode_btn3, self.mode_btn4,
+                             self.settings_panel)
 
     def __themeWinInit(self):
         self.theme_title = QLabel("выбор цветовой темы", self)
@@ -992,15 +981,15 @@ class MainWindow(QMainWindow):
         self.theme3 = QLabel(self)
         self.theme3.setGeometry(QRect(940, 810 - self.desk_h, 550, 200))
         self.theme1_btn = QPushButton(self)
-        self.theme1_btn.setStyleSheet("background-color: transparent")
+        self.theme1_btn.setStyleSheet("background-color: rgba(0, 0, 0, 0.0)")
         self.theme1_btn.setGeometry(QRect(940, 190 - self.desk_h, 550, 200))
         self.theme1_btn.clicked.connect(lambda: self.colorChange('classic'))
         self.theme2_btn = QPushButton(self)
-        self.theme2_btn.setStyleSheet("background-color: transparent")
+        self.theme2_btn.setStyleSheet("background-color: rgba(0, 0, 0, 0.0)")
         self.theme2_btn.setGeometry(QRect(940, 500 - self.desk_h, 550, 200))
         self.theme2_btn.clicked.connect(lambda: self.colorChange('cold'))
         self.theme3_btn = QPushButton(self)
-        self.theme3_btn.setStyleSheet("background-color: transparent")
+        self.theme3_btn.setStyleSheet("background-color: rgba(0, 0, 0, 0.0)")
         self.theme3_btn.setGeometry(QRect(940, 810 - self.desk_h, 550, 200))
         self.theme3_btn.clicked.connect(lambda: self.colorChange('gray'))
         self.theme1_title = QLabel('классическая', self)
@@ -1314,18 +1303,15 @@ class MainWindow(QMainWindow):
         self.menu_btn = QPushButton(self)
         self.menu_btn.setGeometry(-450, 25, 600, 150)
         self.menu_btn.clicked.connect(self.__menuBtnAct)
-        self.menu_btn.setStyleSheet('background-color: transparent')
+        self.menu_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
         self.menu_game_h = QWidget(self)
         self.menu_mode_h = QWidget(self)
         self.menu_theme_h = QWidget(self)
         self.menu_achievments_h = QWidget(self)
         self.menu_rules_h = QWidget(self)
         self.menu_stats_h = QWidget(self)
-        opacity = QGraphicsOpacityEffect(self)
-        opacity.setOpacity(0.2)
         self.btn_hover = QWidget(self)
-        self.btn_hover.setStyleSheet('border-radius: 10px')
-        self.btn_hover.setGraphicsEffect(opacity)
+        self.btn_hover.setStyleSheet('border-radius: 10px; background-color: rgba(255, 255, 255, 0.2)')
         self.btn_hover.hide()
         self.menu_tile = QWidget(self)
         self.menu_game = QPushButton(self, text='игра')
@@ -1340,7 +1326,7 @@ class MainWindow(QMainWindow):
         self.menu_theme.clicked.connect(lambda: self.__changeWindow(2))
         self.menu_achievments.clicked.connect(lambda: self.__changeWindow(3))
         self.menu_rules.clicked.connect(lambda: self.__changeWindow(4))
-        self.menu_stats.clicked.connect(lambda: self.__changeWindow(5))
+        self.menu_stats.clicked.connect(lambda: self.__changeWindow(5)) 
         self.menu_exit.clicked.connect(self.closeApp)
         for btn in (self.menu_game, self.menu_mode, self.menu_theme, self.menu_achievments, self.menu_rules, self.menu_stats, self.menu_exit):
             btn.setFont(self.font_30)
@@ -1379,7 +1365,6 @@ class MainWindow(QMainWindow):
     def __changeWindow(self, newwin: int):
         if self.curwin != newwin and self.menu_btn.isEnabled():
             self.newwin = newwin
-            settings_panel.moveWithWin1()
             for btn in self.menu_btns:
                 btn.setDisabled(True)
             if self.isMenuActive == False:
@@ -1450,7 +1435,6 @@ class MainWindow(QMainWindow):
             
     def __moveMenu(self):
         if self.isMovingAble and self.isWinAnimEnded:
-            settings_panel.moveWithMenu()
             self.isMenuActive = not self.isMenuActive
             menu_anim_group = QParallelAnimationGroup(self)
             if not self.isMenuActive:
@@ -1722,7 +1706,6 @@ class MainWindow(QMainWindow):
         self.isWinner = False
         self.score = 0
         self.__gameWinInit()
-        self.opacity.setOpacity(0)
         self.windows[0] = self.game_widgets
         new_game_init_anim_group = QParallelAnimationGroup(self)
         if self.isMenuActive:
@@ -1752,9 +1735,6 @@ class MainWindow(QMainWindow):
         self.new_game_timer.start()
 
     def __newGameTiles(self):
-        if self.mode_title.x() < 600:
-            for widget in self.windows[1]:
-                widget.move(widget.x() + 175, widget.y())
         if self.isMenuActive:
             self.__moveMenu()
             self.new_game_timer.setInterval(400)
@@ -1825,7 +1805,7 @@ class MainWindow(QMainWindow):
                 self.hollows_lst[i][j][0].setGeometry(self.game_area_pos[i][j][0], self.game_area_pos[i][j][1], 150, 150)
         self.winlose_msg_pad = QWidget(self)
         self.winlose_msg_pad.setGeometry(round(self.desk_w - 162.5 * self.xsize) // 2, round(self.desk_h - 162.5 * self.ysize) // 2, round(162.5 * self.xsize), round(162.5 * self.ysize))
-        self.winlose_msg_pad.setGraphicsEffect(self.opacity)
+        self.winlose_msg_pad.setGeometry(QRect(self.winlose_msg_pad.geometry().adjusted(0, 0, -self.winlose_msg_pad.width(), -self.winlose_msg_pad.height())))
         self.new_game_btn_panel = QLabel('начать\nновую игру', self)
         self.new_game_btn_panel.setGeometry(QRect(670, 730, 0, 0))
         self.new_game_btn_panel.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
@@ -1841,17 +1821,17 @@ class MainWindow(QMainWindow):
         self.new_game_btn = QPushButton(self)
         self.new_game_btn.clicked.connect(self.__newGameBtnAct)
         self.new_game_btn.setGeometry(QRect(670, 730, 0, 0))
-        self.new_game_btn.setStyleSheet('background-color: transparent')
+        self.new_game_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
         self.new_game_btn.setEnabled(False)
         self.change_mode_btn = QPushButton(self)
         self.change_mode_btn.clicked.connect(self.__changeModeBtnAct)
         self.change_mode_btn.setGeometry(QRect(980, 730, 0, 0))
-        self.change_mode_btn.setStyleSheet('background-color: transparent')
+        self.change_mode_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
         self.change_mode_btn.setEnabled(False)
         self.continue_game_btn = QPushButton(self)
         self.continue_game_btn.clicked.connect(self.__continueGameBtnAct)
         self.continue_game_btn.setGeometry(QRect(980, 730, 0, 0))
-        self.continue_game_btn.setStyleSheet('background-color: transparent')
+        self.continue_game_btn.setStyleSheet('background-color: rgba(0, 0, 0, 0.0)')
         self.continue_game_btn.setEnabled(False)
         self.winlose_msg_text = QLabel(self)
         self.font_var.setPointSize(12 * min(self.ysize, self.xsize))
@@ -1888,7 +1868,7 @@ class MainWindow(QMainWindow):
         self.__changeWindow(1)
 
     def __continueGameBtnAct(self):
-        self.opacity.setOpacity(0)
+        self.winlose_msg_pad.setGeometry(QRect(self.winlose_msg_pad.geometry().adjusted(0, 0, -self.winlose_msg_pad.width(), -self.winlose_msg_pad.height())))
         self.new_game_btn.setGeometry(QRect(self.new_game_btn.geometry().adjusted(0, 0, -270, -80)))
         self.continue_game_btn.setGeometry(QRect(self.continue_game_btn.geometry().adjusted(0, 0, -270, -80)))
         self.new_game_btn_panel.setGeometry(QRect(self.new_game_btn.geometry()))
@@ -1969,19 +1949,19 @@ class MainWindow(QMainWindow):
 
     def closeApp(self):
         self.__writeSaveFile()
-        self.close()
+        self.view.close()
 
 app = QApplication(sys.argv)
-main_window = MainWindow()
-main_window.showMaximized()
-settings_panel = SettingsPanel()
-main_window.grid.addWidget(settings_panel)
+view = View()
+main_window = view.main_window
+view.showMaximized()
 for btn in (
     main_window.menu_btns + 
-    [settings_panel.back_btn, settings_panel.start_btn, settings_panel.timer_on_btn, settings_panel.timer_off_btn] +
+    main_window.settings_panel.btns +
     [main_window.new_game_btn, main_window.continue_game_btn, main_window.change_mode_btn, main_window.mode_btn1, main_window.mode_btn2, main_window.mode_btn3, main_window.mode_btn3, main_window.mode_btn4, main_window.theme1_btn, main_window.theme2_btn, main_window.theme3_btn, main_window.menu_exit, main_window.menu_btn]
 ): btn.setFocusPolicy(Qt.NoFocus)
 main_window.colorChange(main_window.clrtheme)
+main_window.setFocus()
 if not main_window.isSaveExists:
     main_window.addTiles(2)
 else:
